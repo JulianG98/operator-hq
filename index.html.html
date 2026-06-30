@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>☠️ OPERATOR HQ</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- PWA -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="OPERATOR HQ">
+<meta name="theme-color" content="#000000">
+<link rel="apple-touch-icon" id="pwa-icon">
+<link rel="manifest" id="pwa-manifest">
+<style>
+:root {
+  --black: #000;
+  --surface: #0d0d0d;
+  --surface2: #141414;
+  --border: #1f1f1f;
+  --red: #cc0000;
+  --red-bright: #ef4444;
+  --red-dim: #3b0000;
+  --green: #00cc44;
+  --green-dim: #003311;
+  --yellow: #ffcc00;
+  --yellow-dim: #332800;
+  --blue: #3b82f6;
+  --gray: #555;
+  --text: #e0e0e0;
+  --text-dim: #666;
+  --font: 'Courier New', 'Lucida Console', monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { background:var(--black); color:var(--text); font-family:var(--font); min-height:100vh; overflow-x:hidden; }
+input, select, textarea, button { font-family:var(--font); }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:#000; }
+::-webkit-scrollbar-thumb { background:var(--red); border-radius:2px; }
+
+/* HEADER */
+#header {
+  position:sticky; top:0; z-index:100;
+  background:linear-gradient(180deg, #1a0000 0%, #000 100%);
+  border-bottom:1px solid var(--red);
+  padding:10px 14px 6px;
+}
+#header-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+#header-title { font-size:16px; font-weight:bold; color:var(--red-bright); letter-spacing:4px; text-shadow:0 0 12px #cc000088; }
+#header-sub { font-size:9px; color:var(--green); letter-spacing:3px; margin-top:1px; }
+#header-stats { text-align:right; }
+#streak-display { font-size:12px; color:var(--yellow); font-weight:bold; }
+#done-display { font-size:9px; color:var(--gray); margin-top:1px; }
+#xp-bar-wrap { position:relative; height:4px; background:#1a0000; border-radius:2px; overflow:hidden; }
+#xp-bar { height:100%; background:linear-gradient(90deg, var(--red) 0%, var(--red-bright) 100%); border-radius:2px; transition:width .8s ease; position:relative; }
+#xp-bar::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg, transparent, rgba(255,100,100,.4), transparent); animation:xp-pulse 2s linear infinite; }
+@keyframes xp-pulse { 0%{transform:translateX(-100%)} 100%{transform:translateX(200%)} }
+
+/* TABS */
+#tabs {
+  display:flex; overflow-x:auto; background:#000; border-bottom:1px solid var(--border);
+  position:sticky; top:72px; z-index:99;
+  scrollbar-width:none;
+}
+#tabs::-webkit-scrollbar { display:none; }
+.tab {
+  flex:0 0 auto; padding:8px 14px; font-size:10px; font-family:var(--font);
+  font-weight:bold; letter-spacing:1px; border:none; background:none;
+  color:var(--gray); cursor:pointer; white-space:nowrap;
+  border-bottom:2px solid transparent; transition:all .2s;
+}
+.tab.active { color:var(--red-bright); border-bottom-color:var(--red-bright); background:#0a0000; }
+.tab:hover:not(.active) { color:#999; }
+
+/* CONTENT */
+#content { padding:12px; padding-bottom:80px; max-width:600px; margin:0 auto; }
+
+/* CARDS */
+.card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:10px; }
+.card-red { background:var(--surface); border:1px solid var(--red-dim); border-radius:10px; padding:12px; margin-bottom:10px; }
+.card-green { background:var(--surface); border:1px solid var(--green-dim); border-radius:10px; padding:12px; margin-bottom:10px; }
+.card-yellow { background:var(--surface); border:1px solid var(--yellow-dim); border-radius:10px; padding:12px; margin-bottom:10px; }
+
+.card-label { font-size:9px; letter-spacing:3px; margin-bottom:8px; font-weight:bold; }
+.label-red { color:var(--red-bright); }
+.label-green { color:var(--green); }
+.label-yellow { color:var(--yellow); }
+.label-gray { color:var(--gray); }
+.label-blue { color:var(--blue); }
+
+.divider { height:1px; background:linear-gradient(90deg, transparent, var(--red-dim), transparent); margin:10px 0; }
+
+/* RANK CARD */
+#rank-card {
+  background:linear-gradient(135deg, #100000 0%, #0d0d0d 50%, #001a00 100%);
+  border:1px solid var(--red); border-radius:12px; padding:16px; margin-bottom:10px;
+}
+#rank-name { font-size:22px; font-weight:bold; color:var(--red-bright); text-shadow:0 0 20px #cc000066; }
+#rank-lvl { font-size:12px; color:var(--green); margin-top:2px; letter-spacing:2px; }
+#xp-total { font-size:28px; font-weight:bold; color:var(--yellow); text-shadow:0 0 12px #ffcc0044; }
+#xp-label { font-size:9px; color:var(--gray); letter-spacing:2px; }
+#rank-progress-wrap { height:8px; background:#1a0a0a; border-radius:4px; overflow:hidden; border:1px solid #2a0a0a; margin-top:8px; }
+#rank-progress { height:100%; border-radius:4px; transition:width 1s ease; position:relative; overflow:hidden; }
+#rank-progress::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent); animation:xp-pulse 1.5s linear infinite; }
+#rank-next { font-size:9px; color:var(--gray); margin-top:4px; text-align:right; }
+
+/* STATS GRID */
+.stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
+.stat-box { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:10px 6px; text-align:center; }
+.stat-val { font-size:20px; font-weight:bold; }
+.stat-lbl { font-size:8px; color:var(--gray); letter-spacing:1px; margin-top:2px; }
+
+/* TABLE */
+table { width:100%; border-collapse:collapse; font-size:11px; }
+th { color:var(--gray); font-size:9px; letter-spacing:1px; padding:4px 6px; text-align:left; border-bottom:1px solid var(--border); }
+td { padding:6px 6px; border-bottom:1px solid #0f0f0f; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:#0f0f0f; }
+
+/* BUTTONS */
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:8px 14px; border-radius:6px; font-family:var(--font); font-size:11px; font-weight:bold; cursor:pointer; letter-spacing:1px; border:1px solid; transition:all .15s; }
+.btn-red { background:#1a0000; border-color:var(--red); color:var(--red-bright); }
+.btn-red:hover { background:var(--red-dim); }
+.btn-green { background:var(--green-dim); border-color:var(--green); color:var(--green); }
+.btn-green:hover { background:#004422; }
+.btn-yellow { background:var(--yellow-dim); border-color:var(--yellow); color:var(--yellow); }
+.btn-blue { background:#0a1628; border-color:var(--blue); color:var(--blue); }
+.btn-gray { background:var(--surface2); border-color:var(--border); color:var(--gray); }
+.btn-full { width:100%; padding:12px; font-size:12px; letter-spacing:2px; border-radius:8px; }
+.btn-success { background:#003311; border-color:var(--green); color:var(--green); }
+
+/* INPUTS */
+.inp { width:100%; background:#0a0a0a; border:1px solid var(--border); border-radius:6px; padding:8px 10px; color:var(--text); font-family:var(--font); font-size:12px; outline:none; }
+.inp:focus { border-color:var(--red); }
+.inp-green:focus { border-color:var(--green); }
+.inp-label { font-size:9px; color:var(--gray); letter-spacing:1px; margin-bottom:4px; }
+.inp-group { margin-bottom:8px; }
+
+.select { width:100%; background:#0a0a0a; border:1px solid var(--border); border-radius:6px; padding:8px 10px; color:var(--text); font-family:var(--font); font-size:12px; outline:none; appearance:none; }
+.select:focus { border-color:var(--red); }
+
+/* WORKOUT ITEM */
+.workout-item { padding:10px 12px; border:1px solid var(--border); border-radius:8px; margin-bottom:6px; cursor:pointer; transition:all .15s; }
+.workout-item:hover { border-color:#333; }
+.workout-item.selected { border-color:var(--red); background:#0a0000; }
+.workout-item.done { opacity:.4; text-decoration:line-through; cursor:default; }
+.workout-name { font-size:12px; font-weight:bold; color:var(--text); }
+.workout-meta { display:flex; justify-content:space-between; margin-top:3px; font-size:9px; color:var(--gray); }
+
+/* BADGE */
+.badge { display:inline-block; padding:2px 6px; border-radius:4px; font-size:9px; font-weight:bold; letter-spacing:1px; }
+.badge-red { background:#3b0000; color:var(--red-bright); border:1px solid var(--red-dim); }
+.badge-green { background:var(--green-dim); color:var(--green); border:1px solid #004422; }
+.badge-yellow { background:var(--yellow-dim); color:var(--yellow); border:1px solid #443300; }
+.badge-blue { background:#0a1628; color:var(--blue); border:1px solid #1e3a5f; }
+.badge-purple { background:#1a0d2e; color:#a855f7; border:1px solid #3b1a6e; }
+.badge-orange { background:#1a0d00; color:#f97316; border:1px solid #5a2a00; }
+
+/* STAR RATING */
+.stars { display:flex; gap:4px; }
+.star { flex:1; padding:6px 2px; text-align:center; border:1px solid var(--border); border-radius:4px; cursor:pointer; font-size:12px; background:#0a0a0a; transition:all .1s; }
+.star.active { background:var(--yellow-dim); border-color:#666; }
+
+/* INTENSITY */
+.intensity-opts { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; }
+.int-opt { padding:6px 4px; text-align:center; border:1px solid var(--border); border-radius:4px; cursor:pointer; font-size:9px; background:#0a0a0a; transition:all .1s; }
+.int-opt.active { border-color:var(--red); background:#1a0000; color:var(--red-bright); }
+
+/* EXERCISE LOG */
+.ex-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #0f0f0f; font-size:11px; }
+.ex-row:last-child { border-bottom:none; }
+.ex-name { color:var(--text); font-weight:bold; }
+.ex-vals { color:var(--gray); font-size:10px; }
+
+/* PROGRESS BAR SMALL */
+.prog-bar { height:4px; background:#1a1a1a; border-radius:2px; overflow:hidden; margin-top:4px; }
+.prog-fill { height:100%; border-radius:2px; transition:width .5s ease; }
+
+/* RANK TABLE */
+.rank-row { display:flex; justify-content:space-between; align-items:center; padding:5px 8px; border-radius:4px; margin-bottom:2px; }
+.rank-row.current { background:#1a0000; border:1px solid var(--red); transform:scale(1.02); }
+.rank-row.done { opacity:.4; }
+.rank-row.future { opacity:.2; }
+
+/* CHECKBOX */
+.check-row { display:flex; align-items:center; gap:8px; cursor:pointer; font-size:11px; color:var(--yellow); padding:4px 0; }
+.check-row input { accent-color:var(--yellow); width:14px; height:14px; }
+
+/* NEXT SESSION BOX */
+.next-box { background:#001a00; border:1px solid var(--green-dim); border-radius:6px; padding:8px 10px; margin-top:8px; }
+.next-box-label { font-size:8px; color:var(--green); letter-spacing:2px; margin-bottom:3px; }
+.next-box-text { font-size:10px; color:#aaa; line-height:1.5; }
+
+/* HISTORY WORKOUT */
+.hist-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:8px; }
+.hist-header { display:flex; justify-content:space-between; align-items:flex-start; }
+.hist-name { font-size:12px; font-weight:bold; }
+.hist-date { font-size:9px; color:var(--gray); margin-top:2px; }
+.hist-next { background:#001500; border:1px solid #003300; border-radius:4px; padding:6px 8px; margin-top:6px; font-size:9px; color:#5a9; line-height:1.5; }
+
+/* SKILL CARD */
+.skill-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+.skill-card { background:var(--surface); border-radius:8px; padding:10px; }
+.skill-title { font-size:11px; font-weight:bold; margin-bottom:4px; }
+.skill-stage { font-size:9px; color:var(--gray); }
+.skill-hold { font-size:16px; font-weight:bold; margin-top:4px; }
+
+/* CHART CONTAINER */
+.chart-wrap { position:relative; height:200px; margin:8px 0; }
+
+/* NOTIFICATION */
+#toast {
+  position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(100px);
+  background:var(--green-dim); border:1px solid var(--green); border-radius:8px;
+  padding:10px 20px; font-size:12px; color:var(--green); font-weight:bold;
+  z-index:1000; transition:transform .3s ease; white-space:nowrap;
+}
+#toast.show { transform:translateX(-50%) translateY(0); }
+
+/* SCANLINES EFFECT ON HEADER */
+#header::after {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.03) 2px, rgba(0,0,0,.03) 4px);
+}
+
+/* INSTALL BANNER */
+#install-banner {
+  display:none; position:fixed; bottom:0; left:0; right:0; z-index:200;
+  background:linear-gradient(135deg, #1a0000, #0d0d0d);
+  border-top:1px solid var(--red); padding:12px 16px;
+  flex-direction:column; gap:8px;
+}
+#install-banner.show { display:flex; }
+#install-banner-title { font-size:12px; font-weight:bold; color:var(--red-bright); letter-spacing:2px; }
+#install-banner-sub { font-size:10px; color:#666; }
+#install-banner-btns { display:flex; gap:8px; }
+/* iOS INSTALL HINT */
+#ios-hint {
+  display:none; position:fixed; bottom:0; left:0; right:0; z-index:200;
+  background:#0d0d0d; border-top:1px solid var(--red);
+  padding:14px 16px; text-align:center;
+}
+#ios-hint.show { display:block; }
+
+  #rank-name { font-size:18px; }
+  #xp-total { font-size:24px; }
+}
+
+/* FORM GRID */
+.form-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; }
+.form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+
+/* WEEK PLAN */
+.week-row { display:flex; align-items:center; gap:6px; padding:4px 0; border-bottom:1px solid #0f0f0f; font-size:9px; }
+.week-num { color:var(--gray); width:22px; flex-shrink:0; }
+.week-phase { width:70px; flex-shrink:0; }
+.week-workouts { flex:1; display:flex; gap:3px; flex-wrap:wrap; }
+.wday { padding:1px 4px; border-radius:3px; font-size:8px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header" style="position:relative">
+  <div id="header-top">
+    <div>
+      <div id="header-title">☠️ OPERATOR HQ</div>
+      <div id="header-sub">TRAINING INTELLIGENCE SYSTEM</div>
+    </div>
+    <div id="header-stats">
+      <div id="streak-display">🔥 0d STREAK</div>
+      <div id="done-display">0 / 39 WORKOUTS</div>
+    </div>
+  </div>
+  <div id="xp-bar-wrap">
+    <div id="xp-bar" style="width:0%"></div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div id="tabs">
+  <button class="tab active" data-tab="hq">🎯 HQ</button>
+  <button class="tab" data-tab="log">➕ LOG</button>
+  <button class="tab" data-tab="history">📋 HISTORY</button>
+  <button class="tab" data-tab="charts">📈 CHARTS</button>
+  <button class="tab" data-tab="records">🏆 PRs</button>
+  <button class="tab" data-tab="skills">🤸 SKILLS</button>
+</div>
+
+<!-- CONTENT -->
+<div id="content"></div>
+
+<!-- INSTALL BANNER (Android) -->
+<div id="install-banner">
+  <div>
+    <div id="install-banner-title">☠️ APP INSTALLIEREN</div>
+    <div id="install-banner-sub">Zum Homescreen hinzufügen — offline nutzbar, Daten bleiben erhalten</div>
+  </div>
+  <div id="install-banner-btns">
+    <button class="btn btn-red" id="install-btn">⚡ INSTALLIEREN</button>
+    <button class="btn btn-gray" id="install-dismiss">Später</button>
+  </div>
+</div>
+<!-- IOS HINT -->
+<div id="ios-hint">
+  <div style="font-size:11px;color:#ef4444;font-weight:bold;letter-spacing:2px;margin-bottom:4px">☠️ ZUM HOMESCREEN HINZUFÜGEN</div>
+  <div style="font-size:10px;color:#666">Tippe <strong style="color:#aaa">Teilen</strong> → <strong style="color:#aaa">Zum Home-Bildschirm</strong></div>
+  <button onclick="document.getElementById('ios-hint').classList.remove('show')" style="margin-top:8px;background:none;border:1px solid #333;border-radius:6px;color:#555;font-family:monospace;font-size:10px;padding:4px 12px;cursor:pointer">✕ SCHLIESSEN</button>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════════
+   DATA
+════════════════════════════════════════════ */
+const RANKS = [
+  {lvl:0, name:"🪖 Recruit",          xp:0},
+  {lvl:1, name:"⚔️ Trainee",           xp:500},
+  {lvl:2, name:"🔫 Operator Candidate",xp:1200},
+  {lvl:3, name:"💣 Junior Operator",   xp:2500},
+  {lvl:4, name:"🎯 Operator",          xp:4500},
+  {lvl:5, name:"🦅 Senior Operator",   xp:7500},
+  {lvl:6, name:"🌟 Team Leader",       xp:12000},
+  {lvl:7, name:"⚡ Specialist",        xp:18000},
+  {lvl:8, name:"💀 Elite Operator",    xp:26000},
+  {lvl:9, name:"🔱 Master Operator",   xp:36000},
+  {lvl:10,name:"☠️ TIER 1",            xp:50000},
+];
+
+const TYPE_COLOR = {
+  "PULL":"#3b82f6","KONDITION":"#22c55e","PUSH":"#f97316",
+  "OPERATOR WOD":"#ef4444","SKILLS + TEST":"#a855f7"
+};
+const TYPE_BADGE = {
+  "PULL":"badge-blue","KONDITION":"badge-green","PUSH":"badge-orange",
+  "OPERATOR WOD":"badge-red","SKILLS + TEST":"badge-purple"
+};
+const INTENSITY_OPTS = ["☠️ BEAST MODE","🔥 STARK","💪 SOLID","😤 OK","😮 SCHWACH"];
+const SKILLS_LIST = ["Handstand","Planche","Human Flag","L-Sit"];
+const SKILL_STAGES = {
+  "Handstand":["Wall HS Bauch","Wall HS Rücken","Kickup Versuche","Free HS Hold","HS Push-up"],
+  "Planche":["Planche Lean","Tuck Planche","Advanced Tuck","Straddle Planche","Full Planche"],
+  "Human Flag":["Flag Negative","Tuck Flag","Straddle Flag","Full Flag"],
+  "L-Sit":["L-Sit gebeugt","L-Sit gerade","V-Sit"]
+};
+const SKILL_COLORS = {"Handstand":"#eab308","Planche":"#f97316","Human Flag":"#ef4444","L-Sit":"#3b82f6"};
+
+const WORKOUT_SEED = [
+  {id:1001,name:"W1 DI — KONDITION",type:"KONDITION",date:"2026-06-30",week:1,notes:"5min Springseil | 2km @Komfort-Pace | 4×2min Boxsack @Max (60s Pause) | 6×30s Battle Rope Tabata",nextSession:"W2: 3km statt 2km | Boxing +1 Runde (5×2min) | Battle Rope gleich | Pace steigern"},
+  {id:1002,name:"W1 MI — PUSH + Planche",type:"PUSH",date:"2026-07-01",week:1,notes:"Planche Lean 5×10s | OHP 4×10 @leicht | Dips 4×10 | Push-ups 5×20 | Slam Ball rot. 8/Seite | TGU 3×3/Seite",nextSession:"W2: OHP +2.5kg | Dips 4×12 | Push-ups 5×25 | TGU sauberer"},
+  {id:1003,name:"W1 DO — OPERATOR WOD",type:"OPERATOR WOD",date:"2026-07-02",week:1,notes:"Human Flag Negatives 5× | Squat 4×8 @leicht | RDL 3×10 | KB Swing 4×15 | AMRAP 15min: 1 Rope Climb + 15 KB Swing + 10 Slam Ball rot. + 200m",nextSession:"W2: AMRAP gleich | Slam Ball +2 (12 rot.) | KB Swing +2 (17) | Squat leicht schwerer"},
+  {id:1004,name:"W1 FR — BASELINE TEST",type:"SKILLS + TEST",date:"2026-07-03",week:1,notes:"HS Wall 5×20s | Planche Lean | Flag Negatives | L-Sit 5× Max Hold | BASELINE: Max Pull-ups + Max Push-ups → AUFSCHREIBEN!",nextSession:"W2: Baseline gesetzt. Skills gleiche Intensität. L-Sit Beine strecken."},
+  {id:1005,name:"W2 MO — PULL CIRCUIT",type:"PULL",date:"2026-07-06",week:2,notes:"HS Wall 5×25s | PULL CIRCUIT 4 Runden: 6 PU + 1 Rope Climb + 10 KB Woodchop/Seite + 8 Row + 10s Dead Hang (60s Pause) | Russian Twist 3×20 | Landmine 3×10/Seite",nextSession:"W3: Pull-ups 7 | Row +5kg | Rope Climb Tempo | Landmine schwerer"},
+  {id:1006,name:"W2 DI — KONDITION",type:"KONDITION",date:"2026-07-07",week:2,notes:"5min Springseil | 3km @Komfort | 5×2min Boxsack (45s Pause) | EMOM 10min: gerade 5 Burpees + 10 Slam Ball rot. / ungerade 30s Boxsack + 10 Battle Rope | 6×30s Battle Rope",nextSession:"W3: Komfort ENDET → 4×400m @85% (90s Pause) | EMOM halten"},
+  {id:1007,name:"W2 MI — PUSH + Planche",type:"PUSH",date:"2026-07-08",week:2,notes:"Planche Lean 5×10s | OHP 4×10 @mittel | Dips 4×12 | Push-ups 5×25 | TGU 3×3/Seite",nextSession:"W3: OHP +2.5kg | Dips 5×12 | Push-ups 5×30 | Planche Lean 5×15s + Tuck versuchen"},
+  {id:1008,name:"W2 DO — OPERATOR WOD",type:"OPERATOR WOD",date:"2026-07-09",week:2,notes:"Human Flag Tuck 5×3s | Squat 4×8 @mittel | RDL 3×10 | KB Swing 4×15 | AMRAP 15min: 1 RC + 15 KB + 12 Slam rot. + 200m",nextSession:"W3: AMRAP 15→18min | RC 1→2× | KB 15→20 | Squat schwerer"},
+  {id:1009,name:"W2 FR — SKILLS",type:"SKILLS + TEST",date:"2026-07-10",week:2,notes:"HS Wall 5×25s | Planche Lean 5×10s | Tuck Flag 5×3s | L-Sit 5×10s gerade Beine versuchen | Pull-ups + Push-ups notieren",nextSession:"W3: L-Sit gerade 5×10s | HS 5×30s + Kickup | Planche 5×15s | RETEST W3"},
+  {id:1010,name:"W3 MO — PULL CIRCUIT",type:"PULL",date:"2026-07-13",week:3,notes:"HS Kickup-Versuche 5× | PULL CIRCUIT 4 Runden: 7 PU + 1 RC + 10 Woodchop + 8 Row @mittel + 10s Hang | Russian Twist 3×20 | Landmine schwerer",nextSession:"W4: Pull-ups 4×Max | Pause 60s | Row max. Gewicht | Beine minimal RC"},
+  {id:1011,name:"W3 DI — KONDITION Intervalle",type:"KONDITION",date:"2026-07-14",week:3,notes:"5min Springseil | 4×400m @85% (90s Pause) — PACE NOTIEREN! | EMOM 10min | 6×30s Battle Rope",nextSession:"W4: 5×400m | Pause 90s→75s | Gleicher/besser Pace"},
+  {id:1012,name:"W3 MI — PUSH + Planche",type:"PUSH",date:"2026-07-15",week:3,notes:"Planche Lean 5×15s + Tuck versuchen | OHP 4×10 @mittel-schwer | Dips 5×12 | Push-ups 5×30 | TGU 3×4/Seite",nextSession:"W4: OHP +5kg | Dips 5×14 | Push-ups 5×35 | Tuck Planche 5×5s | Pallof Press"},
+  {id:1013,name:"W3 DO — OPERATOR WOD",type:"OPERATOR WOD",date:"2026-07-16",week:3,notes:"Flag Tuck 5×3s | Squat 4×8 @mittel | RDL 4×8 @schwer | KB Swing 4×15 | AMRAP 18min: 2 RC + 20 KB + 12 Slam rot. + 200m — RUNDEN NOTIEREN!",nextSession:"W4: +5 KB Swing (25) | +3 Slam (15 rot.) | Squat +5kg | Flag 5×5s"},
+  {id:1014,name:"W3 FR — SKILLS + RETEST",type:"SKILLS + TEST",date:"2026-07-17",week:3,notes:"HS Kickup | Planche 5×15s | Flag 5×3s | L-Sit 5×10s | RETEST: Max Pull-ups + Max Push-ups → VERGLEICH MIT W1!",nextSession:"W4: Delta auswerten | HS Kickup öfter | Tuck Planche 5×5s | Flag 5×5s"},
+  {id:1015,name:"W4 MO — PULL Heavy",type:"PULL",date:"2026-07-20",week:4,notes:"HS Kickup 5×10 | PULL CIRCUIT 4 Runden: MAX PU + RC (Beine weniger) + 10 Woodchop + 8 Row @max + 10s Hang | Negative PU 3×5s | Russian Twist 3×20",nextSession:"W5: Gewichtsweste +5kg | RC Arme first | Row max | Negative PU 8s"},
+  {id:1016,name:"W4 DI — KONDITION",type:"KONDITION",date:"2026-07-21",week:4,notes:"5min Springseil (Double Unders!) | 5×400m @85% (75s Pause) | EMOM 10min | 8×30s Battle Rope",nextSession:"W5: FORMAT → 3×800m @80% (2min Pause) | Pace/800m notieren"},
+  {id:1017,name:"W4 MI — PUSH + Planche",type:"PUSH",date:"2026-07-22",week:4,notes:"Tuck Planche 5×5s | OHP 4×8 @schwer | Dips 5×14 | Push-ups 5×35 | TGU 3×4/Seite schwerer | Pallof Press 3×12/Seite",nextSession:"W5: Dips +Weste 5kg | Push-ups 5×40 | OHP schwerer | Tuck 5×8s"},
+  {id:1018,name:"W4 DO — OPERATOR WOD",type:"OPERATOR WOD",date:"2026-07-23",week:4,notes:"Flag Tuck 5×5s | Squat 4×6 @schwer | RDL 4×8 | KB 4×20 | AMRAP 18min: 2 RC + 20 KB + 15 Slam rot. + 200m",nextSession:"W5: AMRAP 18→20min | Laufen 200→400m | Squat max | Straddle Flag versuchen"},
+  {id:1019,name:"W4 FR — SKILLS + Benchmark",type:"SKILLS + TEST",date:"2026-07-24",week:4,notes:"Alle Skills | FUNCTIONAL BENCHMARK: 3 Runden for Time: 1 RC + 10 PU + 20 Push-ups + 10 KB + 400m → ZEIT STOPPEN!",nextSession:"W5: Benchmark notiert → W8 Vergleich | Skills nächste Stufe | HS Free versuchen"},
+  {id:1020,name:"W5 MO — PULL + 5kg Weste",type:"PULL",date:"2026-07-27",week:5,notes:"HS Free versuchen 5×10 | PULL CIRCUIT 4 Runden: Max PU @+5kg + 3 Negative PU + RC (Arme first) + 10 Woodchop + 8 Row (90s Pause)",nextSession:"W6: Weste +10kg | RC Arms Only → XP +200! | Row +5kg | Negative 8s"},
+  {id:1021,name:"W5 DI — KONDITION 800m",type:"KONDITION",date:"2026-07-28",week:5,notes:"5min Springseil | 3×800m @80% (2min Pause) — PACE/800m NOTIEREN! | EMOM 10min | 8×30s Battle Rope",nextSession:"W6: 4×800m | Pause 2min→90s | Gleiches/besseres Pace"},
+  {id:1022,name:"W5 MI — PUSH + Planche",type:"PUSH",date:"2026-07-29",week:5,notes:"Tuck Planche 5×8s | OHP 4×6 @schwer | Dips 5×12 @+5kg Weste | Push-ups 5×40 | TGU 3×5/Seite | Pallof Press 3×12/Seite",nextSession:"W6: Dips +10kg | OHP 3×5 max | Push-ups 5×Max | Advanced Tuck versuchen"},
+  {id:1023,name:"W5 DO — AMRAP 20min",type:"OPERATOR WOD",date:"2026-07-30",week:5,notes:"Flag Tuck 5×5s | Squat 4×6 @max | RDL 4×8 @schwer | KB 4×20 | AMRAP 20min: 2 RC + 20 KB + 15 Slam rot. + 400m — RUNDEN NOTIEREN!",nextSession:"W6: FORMAT → FOR TIME 5 Runden: 1 RC + 20 KB + 10 Slam + 400m → ZEIT stoppen"},
+  {id:1024,name:"W5 FR — SKILLS + RETEST",type:"SKILLS + TEST",date:"2026-07-31",week:5,notes:"HS Free | Advanced Tuck | Straddle Flag versuchen | L-Sit 5×15s | RETEST: Max PU + Max Push-ups → VERGLEICH MIT W1 + W3!",nextSession:"W6: Skill-Push — jede Stufe 1 Level höher | HS Free Hold | Straddle | V-Sit"},
+  {id:1025,name:"W6 MO — PULL + 10kg Weste",type:"PULL",date:"2026-08-03",week:6,notes:"HS Free Hold 5× Max-Zeit | PULL CIRCUIT 4 Runden: Max PU @+10kg + RC Arms Only (3×) + Woodchop + Row (90s) | Landmine schwerer",nextSession:"W7: Weste gleich, Qualität > Quantität | Arms Only festigen | HS Zeit max"},
+  {id:1026,name:"W6 DI — KONDITION 800m×4",type:"KONDITION",date:"2026-08-04",week:6,notes:"5min Springseil | 4×800m @80% (90s Pause) — PACE/km NOTIEREN! | EMOM 10min | 8×30s Battle Rope",nextSession:"W7: FORMAT → 2×1200m @78% + 2×400m @90% | 1200m gleichmäßig"},
+  {id:1027,name:"W6 MI — PUSH PEAK",type:"PUSH",date:"2026-08-05",week:6,notes:"Advanced Tuck 5×8s | OHP 3×5 @maximal | Dips 5×10 @+10kg | Push-ups 5×Max | TGU 3×5/Seite schwer | Pallof Press 3×12",nextSession:"W7: OHP max (letztes Mal) | Push-ups mit Weste | W8 = TEST ohne Weste"},
+  {id:1028,name:"W6 DO — FOR TIME 5 Runden",type:"OPERATOR WOD",date:"2026-08-06",week:6,notes:"Straddle Flag versuchen | Squat 3×5 @max | RDL 4×8 @max | KB 4×20 | FOR TIME — 5 Runden: 1 RC + 20 KB + 10 Slam + 400m → GESAMTZEIT STOPPEN!",nextSession:"W7: AMRAP 22min: 2 RC + 25 KB + 15 Slam rot. + 400m | Zeit merken → W8 Vergleich"},
+  {id:1029,name:"W6 FR — SKILLS PUSH",type:"SKILLS + TEST",date:"2026-08-07",week:6,notes:"HS Free Hold max | Advanced Tuck | Straddle Flag | L-Sit→V-Sit | Max PU + Push-ups informell",nextSession:"W7: Letzte Aufbau-Woche | Skills Peak | W8 = ABSCHLUSSTEST"},
+  {id:1030,name:"W7 MO — PULL Prep Test",type:"PULL",date:"2026-08-10",week:7,notes:"HS Free Hold 5× max | PULL CIRCUIT 4 Runden: Max PU @+10kg + RC Arms Only + Woodchop + Row | KEIN Finisher — Energie sparen!",nextSession:"W8 TEST: 1 Satz Max PU All-out (48h keine PU davor) | Ziel: +30-50% über W1"},
+  {id:1031,name:"W7 DI — KONDITION Langstrecke",type:"KONDITION",date:"2026-08-11",week:7,notes:"5min Springseil | 2×1200m @78% + 2×400m @90% | EMOM 10min | 6×30s Battle Rope",nextSession:"W8 = COOPER TEST: 12min Maximum | Gleichmäßig starten | Ziel ≥ 3.6km"},
+  {id:1032,name:"W7 MI — PUSH Peak",type:"PUSH",date:"2026-08-12",week:7,notes:"Tuck/Advanced Planche max | OHP 4×8 @schwer | Dips 5×12 @+10kg | Push-ups 5×Max (Weste) | TGU 3×5/Seite | Pallof Press 3×12",nextSession:"W8 TEST: Max Push-ups OHNE Weste all-out | Ziel: +30-50% über W1"},
+  {id:1033,name:"W7 DO — AMRAP 22min PEAK",type:"OPERATOR WOD",date:"2026-08-13",week:7,notes:"Flag max Hold | Squat 4×6 @schwer | RDL 3×8 | KB 4×20 | AMRAP 22min: 2 RC + 25 KB + 15 Slam rot. + 400m",nextSession:"W8 BENCHMARK: FOR TIME 5 Runden (gleich W6) | Ziel: -10% Zeit"},
+  {id:1034,name:"W7 FR — SKILLS Letzte Runde",type:"SKILLS + TEST",date:"2026-08-14",week:7,notes:"Alle 4 Skills max | Kein Test | Mobility 15min ausgiebig",nextSession:"W8 = ABSCHLUSSTEST: Max PU + Max Push-ups + 12min Cooper | ALLES GEBEN!"},
+  {id:1035,name:"W8 MO — MAX TEST Pull-ups",type:"PULL",date:"2026-08-17",week:8,notes:"HS Free Hold | 1× ALL-OUT Pull-ups (max Reps ohne Pause) → AUFSCHREIBEN! | Vergleich W1",nextSession:"Phase 2: Weighted PU | Muscle-up Progression"},
+  {id:1036,name:"W8 DI — COOPER TEST",type:"KONDITION",date:"2026-08-18",week:8,notes:"8min Warm-up locker | 12 MINUTEN COOPER TEST — gleichmäßig starten! Distanz messen! | Polizei-Minimum: 3.6km",nextSession:"Phase 2: Schwimmen | Laufen 5km-Aufbau | Ziel Cooper 3.8km"},
+  {id:1037,name:"W8 MI — MAX TEST Push-ups",type:"PUSH",date:"2026-08-19",week:8,notes:"1× ALL-OUT Push-ups (max Reps, saubere Form) → AUFSCHREIBEN! | Vergleich W1",nextSession:"Phase 2: Bench Press | Planche: Straddle | Ziel: HS Push-up"},
+  {id:1038,name:"W8 DO — BENCHMARK FOR TIME",type:"OPERATOR WOD",date:"2026-08-20",week:8,notes:"FOR TIME — 5 Runden: 1 RC + 20 KB + 10 Slam + 400m → Vergleich MIT W6!",nextSession:"Phase 2: WOD Komplexer | Sandbag | Weste beim Laufen"},
+  {id:1039,name:"W8 FR — ABSCHLUSSTEST",type:"SKILLS + TEST",date:"2026-08-21",week:8,notes:"ALLE SKILLS: HS max | Planche max | Flag max | L-Sit max | Max PU + Push-ups | ALLES VERGLEICHEN MIT W1!",nextSession:"PHASE 2 PLANEN: Schwächen identifizieren | Schwimmen, Bench, Muscle-up"},
+];
+
+/* ════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════ */
+const SK = 'operator-hq-v2';
+
+function defaultState() {
+  return {
+    workouts: WORKOUT_SEED.map(w => ({...w, done:false, duration:null, intensity:null, rating:null, userNotes:"", nextTraining:"", newPR:false, doneDate:null})),
+    exercises: [],
+    records: [],
+    skills: [],
+    bonusXP: 0
+  };
+}
+
+function loadState() {
+  try { const d = localStorage.getItem(SK); return d ? JSON.parse(d) : null; } catch { return null; }
+}
+
+function saveState() {
+  try { localStorage.setItem(SK, JSON.stringify(state)); } catch {}
+}
+
+let state = loadState() || defaultState();
+let currentTab = 'hq';
+let selectedWorkoutId = null;
+let showAddExercise = false;
+let showAddPR = false;
+let showAddSkill = false;
+let chartInstances = {};
+
+// Form state
+let logForm = { duration:'65', intensity:'🔥 STARK', rating:4, userNotes:'', nextTraining:'', newPR:false };
+let exForm = { name:'', sets:'', reps:'', weight:'', pause:'', duration:'', distance:'', variant:'', notes:'', isPR:false };
+let prForm = { exercise:'Pull-ups', value:'', unit:'reps', notes:'' };
+let skillForm = { skill:'Handstand', stage:'Wall HS Bauch', holdSecs:'', attempts:'', milestone:false, notes:'' };
+
+/* ════════════════════════════════════════════
+   CALCULATIONS
+════════════════════════════════════════════ */
+function getTotalXP() {
+  return state.bonusXP +
+    state.workouts.filter(w=>w.done).length * 100 +
+    state.records.length * 50 +
+    state.skills.filter(s=>s.milestone).length * 200;
+}
+
+function getRank(xp) {
+  let cur = RANKS[0];
+  for (const r of RANKS) { if (xp >= r.xp) cur = r; else break; }
+  const next = RANKS[cur.lvl + 1];
+  const pct = next ? ((xp - cur.xp) / (next.xp - cur.xp)) * 100 : 100;
+  return { cur, next, pct: Math.min(pct, 100) };
+}
+
+function getStreak() {
+  const dates = [...new Set(state.workouts.filter(w=>w.done&&w.doneDate).map(w=>w.doneDate))].sort().reverse();
+  if (!dates.length) return 0;
+  let streak = 0;
+  let cur = new Date(); cur.setHours(0,0,0,0);
+  for (const d of dates) {
+    const dt = new Date(d); dt.setHours(0,0,0,0);
+    const diff = Math.round((cur - dt) / 86400000);
+    if (diff <= 1) { streak++; cur = dt; } else break;
+  }
+  return streak;
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  const [y,m,dd] = d.split('-');
+  return `${dd}.${m}.${y}`;
+}
+
+/* ════════════════════════════════════════════
+   HEADER UPDATE
+════════════════════════════════════════════ */
+function updateHeader() {
+  const xp = getTotalXP();
+  const { cur, next, pct } = getRank(xp);
+  const streak = getStreak();
+  const done = state.workouts.filter(w=>w.done).length;
+
+  document.getElementById('streak-display').textContent = `🔥 ${streak}d STREAK`;
+  document.getElementById('done-display').textContent = `${done} / 39 WORKOUTS`;
+  document.getElementById('xp-bar').style.width = pct + '%';
+}
+
+/* ════════════════════════════════════════════
+   TOAST
+════════════════════════════════════════════ */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+/* ════════════════════════════════════════════
+   RENDER
+════════════════════════════════════════════ */
+function render() {
+  const c = document.getElementById('content');
+  // Destroy old charts
+  Object.values(chartInstances).forEach(ch => { try { ch.destroy(); } catch {} });
+  chartInstances = {};
+
+  c.innerHTML = renderTab();
+  attachListeners();
+  if (currentTab === 'charts') setTimeout(renderCharts, 50);
+  updateHeader();
+}
+
+function renderTab() {
+  switch(currentTab) {
+    case 'hq':      return renderHQ();
+    case 'log':     return renderLog();
+    case 'history': return renderHistory();
+    case 'charts':  return renderChartsHTML();
+    case 'records': return renderRecords();
+    case 'skills':  return renderSkills();
+    default:        return renderHQ();
+  }
+}
+
+/* ════════════════════════════════════════════
+   HQ TAB
+════════════════════════════════════════════ */
+function renderHQ() {
+  const xp = getTotalXP();
+  const { cur, next, pct } = getRank(xp);
+  const streak = getStreak();
+  const done = state.workouts.filter(w=>w.done);
+  const planned = state.workouts.filter(w=>!w.done).sort((a,b)=>a.date.localeCompare(b.date));
+  const nextW = planned[0];
+  const lastW = [...done].sort((a,b)=>(b.doneDate||'').localeCompare(a.doneDate||''))[0];
+
+  const pctWidth = `background:linear-gradient(90deg, #cc0000, #ef4444); width:${pct}%`;
+
+  return `
+  <!-- RANK CARD -->
+  <div id="rank-card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div style="font-size:9px;color:#666;letter-spacing:3px;margin-bottom:4px">AKTUELLER RANG</div>
+        <div id="rank-name">${cur.name}</div>
+        <div id="rank-lvl">LEVEL ${cur.lvl}</div>
+      </div>
+      <div style="text-align:right">
+        <div id="xp-total">${xp.toLocaleString()}</div>
+        <div id="xp-label">GESAMT XP</div>
+      </div>
+    </div>
+    ${next ? `
+    <div id="rank-progress-wrap" style="margin-top:12px">
+      <div id="rank-progress" style="${pctWidth}"></div>
+    </div>
+    <div id="rank-next">${(next.xp - xp).toLocaleString()} XP bis ${next.name}</div>
+    ` : '<div style="color:#22c55e;font-size:12px;margin-top:8px;text-align:center">☠️ MAXIMALER RANG ERREICHT</div>'}
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-box">
+      <div class="stat-val" style="color:#eab308">🔥 ${streak}</div>
+      <div class="stat-lbl">STREAK TAGE</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" style="color:#22c55e">${done.length}/39</div>
+      <div class="stat-lbl">WORKOUTS</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" style="color:#3b82f6">${state.records.length}</div>
+      <div class="stat-lbl">PERSONAL RECORDS</div>
+    </div>
+  </div>
+
+  <!-- NEXT WORKOUT -->
+  ${nextW ? `
+  <div class="card-green">
+    <div class="card-label label-green">⚡ NÄCHSTES WORKOUT</div>
+    <div style="font-size:14px;font-weight:bold;margin-bottom:2px">${nextW.name}</div>
+    <div style="font-size:10px;color:#666;margin-bottom:8px">${fmtDate(nextW.date)} · <span class="badge ${TYPE_BADGE[nextW.type]||'badge-gray'}">${nextW.type}</span></div>
+    <div class="divider"></div>
+    <div style="font-size:10px;color:#aaa;line-height:1.6">${nextW.notes}</div>
+    ${nextW.nextSession ? `<div class="next-box"><div class="next-box-label">⚡ PROGRESSION ZIEL</div><div class="next-box-text">${nextW.nextSession}</div></div>` : ''}
+    <button class="btn btn-green" style="margin-top:10px;width:100%" onclick="switchTab('log')">➕ JETZT LOGGEN</button>
+  </div>
+  ` : '<div class="card-green" style="text-align:center;padding:20px"><div style="font-size:20px;margin-bottom:6px">🎉</div><div style="color:#22c55e;font-weight:bold">ALLE WORKOUTS ABGESCHLOSSEN!</div><div style="font-size:10px;color:#666;margin-top:4px">Phase 2 planen</div></div>'}
+
+  <!-- LAST WORKOUT -->
+  ${lastW ? `
+  <div class="card">
+    <div class="card-label label-gray">📋 LETZTES WORKOUT</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div style="font-weight:bold;font-size:12px">${lastW.name}</div>
+        <div style="font-size:9px;color:#555;margin-top:2px">${fmtDate(lastW.doneDate)} · ${lastW.duration||'—'}min · ${lastW.rating||'—'} ⭐</div>
+      </div>
+      ${lastW.intensity ? `<span class="badge badge-red">${lastW.intensity.split(' ')[0]}</span>` : ''}
+    </div>
+    ${lastW.nextTraining ? `<div class="next-box" style="margin-top:8px"><div class="next-box-label">→ NÄCHSTES MAL</div><div class="next-box-text">${lastW.nextTraining}</div></div>` : ''}
+  </div>
+  ` : ''}
+
+  <!-- XP QUICK ACTIONS -->
+  <div class="card-yellow">
+    <div class="card-label label-yellow">⚡ XP SCHNELL VERGEBEN</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+      <button class="btn btn-yellow" onclick="addBonusXP(200,'🤸 Skill-Meilenstein +200 XP')">🤸 Skill +200</button>
+      <button class="btn btn-yellow" onclick="addBonusXP(150,'🔥 Perfekte Woche +150 XP')">🔥 Perf. Woche +150</button>
+      <button class="btn btn-yellow" onclick="addBonusXP(300,'🎯 Cooper Test bestanden +300 XP')">🎯 Cooper +300</button>
+      <button class="btn btn-yellow" onclick="addBonusXP(500,'💀 30 Pull-ups unbroken +500 XP')">💀 30 PU +500</button>
+    </div>
+  </div>
+
+  <!-- RANK TABLE -->
+  <div class="card">
+    <div class="card-label label-gray">🗺️ RANG-TABELLE</div>
+    ${RANKS.map(r => {
+      const active = cur.lvl === r.lvl;
+      const achieved = xp >= r.xp;
+      return `<div class="rank-row ${active?'current':achieved?'done':'future'}">
+        <span style="font-size:11px${active?';color:#ef4444;font-weight:bold':''}">${r.name}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:9px;color:#666">${r.xp.toLocaleString()} XP</span>
+          ${achieved&&!active?'<span style="color:#22c55e;font-size:10px">✓</span>':''}
+          ${active?'<span style="color:#ef4444;font-size:9px;animation:xp-pulse 1s linear infinite">◀</span>':''}
+        </div>
+      </div>`;
+    }).join('')}
+  </div>
+
+  <!-- XP SYSTEM TABLE -->
+  <div class="card-yellow">
+    <div class="card-label label-yellow">⚡ XP SYSTEM</div>
+    <table>
+      <tr><td>✅ Workout abgeschlossen</td><td style="color:#ffcc00;text-align:right;white-space:nowrap">+100 XP</td></tr>
+      <tr><td>🏆 Personal Record</td><td style="color:#ffcc00;text-align:right">+50 XP</td></tr>
+      <tr><td>🤸 Skill-Meilenstein</td><td style="color:#ffcc00;text-align:right">+200 XP</td></tr>
+      <tr><td>🔥 Perfekte Woche (5/5)</td><td style="color:#ffcc00;text-align:right">+150 XP</td></tr>
+      <tr><td>🎯 Cooper Test ≥ 3.6km</td><td style="color:#ffcc00;text-align:right">+300 XP</td></tr>
+      <tr><td>💀 30 Pull-ups unbroken</td><td style="color:#ffcc00;text-align:right">+500 XP</td></tr>
+      <tr><td>💀 100 Push-ups unbroken</td><td style="color:#ffcc00;text-align:right">+500 XP</td></tr>
+      <tr><td>🧗 Rope Climb Arms Only</td><td style="color:#ffcc00;text-align:right">+200 XP</td></tr>
+    </table>
+  </div>
+  `;
+}
+
+/* ════════════════════════════════════════════
+   LOG TAB
+════════════════════════════════════════════ */
+function renderLog() {
+  const planned = state.workouts.filter(w=>!w.done).sort((a,b)=>a.date.localeCompare(b.date));
+  const selW = state.workouts.find(w=>w.id===selectedWorkoutId);
+  const todayEx = selW ? state.exercises.filter(e=>e.workoutId===selectedWorkoutId) : [];
+
+  return `
+  <!-- SELECT WORKOUT -->
+  <div class="card-red">
+    <div class="card-label label-red">📅 WORKOUT WÄHLEN</div>
+    <div style="max-height:220px;overflow-y:auto">
+      ${planned.slice(0,15).map(w => `
+        <div class="workout-item ${selectedWorkoutId===w.id?'selected':''}" onclick="selectWorkout(${w.id})">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="workout-name">${w.name}</div>
+            <span class="badge ${TYPE_BADGE[w.type]||'badge-gray'}" style="font-size:8px">${w.type}</span>
+          </div>
+          <div class="workout-meta">
+            <span>${fmtDate(w.date)}</span>
+            <span>W${w.week}</span>
+          </div>
+        </div>
+      `).join('')}
+      ${planned.length===0?'<div style="color:#555;text-align:center;padding:20px;font-size:11px">🎉 Alle 39 Workouts erledigt!</div>':''}
+    </div>
+  </div>
+
+  ${selW ? `
+  <!-- WORKOUT DETAIL -->
+  <div class="card-green">
+    <div class="card-label label-green">📋 HEUTIGES WORKOUT</div>
+    <div style="font-weight:bold;font-size:13px;margin-bottom:6px">${selW.name}</div>
+    <div style="font-size:10px;color:#aaa;line-height:1.6">${selW.notes}</div>
+    ${selW.nextSession ? `<div class="next-box"><div class="next-box-label">⚡ PROGRESSION</div><div class="next-box-text">${selW.nextSession}</div></div>` : ''}
+  </div>
+
+  <!-- ÜBUNGSLOG -->
+  <div class="card" style="border-color:#1e3a5f">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="card-label label-blue" style="margin-bottom:0">💪 ÜBUNGSLOG</div>
+      <button class="btn btn-blue" onclick="toggleAddEx()">${showAddExercise?'✕ ABBRECHEN':'+ ÜBUNG HINZUFÜGEN'}</button>
+    </div>
+
+    ${showAddExercise ? `
+    <div style="background:#080d14;border:1px solid #1e3a5f;border-radius:8px;padding:10px;margin-bottom:10px">
+      <div class="inp-group"><div class="inp-label">ÜBUNG</div><input class="inp" id="ex-name" placeholder="z.B. Pull-ups" value="${exForm.name}"></div>
+      <div class="form-grid-3">
+        <div class="inp-group"><div class="inp-label">SÄTZE</div><input class="inp" type="number" id="ex-sets" value="${exForm.sets}"></div>
+        <div class="inp-group"><div class="inp-label">REPS</div><input class="inp" type="number" id="ex-reps" value="${exForm.reps}"></div>
+        <div class="inp-group"><div class="inp-label">KG</div><input class="inp" type="number" id="ex-weight" value="${exForm.weight}"></div>
+        <div class="inp-group"><div class="inp-label">PAUSE(S)</div><input class="inp" type="number" id="ex-pause" value="${exForm.pause}"></div>
+        <div class="inp-group"><div class="inp-label">HOLD(S)</div><input class="inp" type="number" id="ex-dur" value="${exForm.duration}"></div>
+        <div class="inp-group"><div class="inp-label">DISTANZ(M)</div><input class="inp" type="number" id="ex-dist" value="${exForm.distance}"></div>
+      </div>
+      <div class="inp-group"><div class="inp-label">VARIANTE</div><input class="inp" id="ex-var" placeholder="z.B. Wide Grip, Arms Only" value="${exForm.variant}"></div>
+      <div class="inp-group"><div class="inp-label">NOTIZEN</div><input class="inp" id="ex-notes" placeholder="..." value="${exForm.notes}"></div>
+      <label class="check-row" style="margin-bottom:8px"><input type="checkbox" id="ex-pr" ${exForm.isPR?'checked':''}> 🏆 Neuer Personal Record!</label>
+      <button class="btn btn-blue btn-full" onclick="saveExercise()">ÜBUNG SPEICHERN</button>
+    </div>
+    ` : ''}
+
+    ${todayEx.length > 0 ? todayEx.map(e => `
+      <div class="ex-row">
+        <div>
+          <div class="ex-name">${e.name}${e.isPR?' 🏆':''}</div>
+          <div class="ex-vals">${[e.sets&&`${e.sets}×`,e.reps&&`${e.reps} reps`,e.weight&&`${e.weight}kg`,e.duration&&`${e.duration}s hold`,e.distance&&`${e.distance}m`,e.pause&&`${e.pause}s Pause`,e.variant].filter(Boolean).join(' · ')}</div>
+        </div>
+      </div>
+    `).join('') : `<div style="color:#333;text-align:center;padding:12px;font-size:10px">Noch keine Übungen eingetragen</div>`}
+  </div>
+
+  <!-- ABSCHLIESSEN -->
+  <div class="card-red">
+    <div class="card-label label-red">✅ WORKOUT ABSCHLIESSEN</div>
+
+    <div class="inp-group">
+      <div class="inp-label">DAUER (MIN)</div>
+      <input class="inp" type="number" id="log-dur" value="${logForm.duration}">
+    </div>
+
+    <div class="inp-group">
+      <div class="inp-label">INTENSITÄT</div>
+      <div class="intensity-opts">
+        ${INTENSITY_OPTS.map(i=>`<div class="int-opt ${logForm.intensity===i?'active':''}" onclick="setIntensity('${i}')">${i}</div>`).join('')}
+      </div>
+    </div>
+
+    <div class="inp-group">
+      <div class="inp-label">BEWERTUNG</div>
+      <div class="stars">
+        ${[1,2,3,4,5].map(n=>`<div class="star ${logForm.rating>=n?'active':''}" onclick="setRating(${n})">${'⭐'}</div>`).join('')}
+      </div>
+    </div>
+
+    <div class="inp-group">
+      <div class="inp-label">NOTIZEN — WAS WAR HEUTE?</div>
+      <textarea class="inp" id="log-notes" rows="2" style="resize:none" placeholder="Heute war...">${logForm.userNotes}</textarea>
+    </div>
+
+    <div class="inp-group">
+      <div class="inp-label" style="color:#22c55e">→ WAS ICH NÄCHSTES MAL STEIGERE</div>
+      <textarea class="inp inp-green" id="log-next" rows="2" style="resize:none;border-color:#003311;color:#22c55e" placeholder="Nächste Woche...">${logForm.nextTraining}</textarea>
+    </div>
+
+    <label class="check-row" style="margin-bottom:10px"><input type="checkbox" id="log-pr" ${logForm.newPR?'checked':''}> 🏆 Neuer Personal Record gesetzt (+50 XP)</label>
+
+    <button class="btn btn-red btn-full" onclick="completeWorkout()">⚡ WORKOUT ABSCHLIESSEN +100 XP</button>
+  </div>
+  ` : `<div style="color:#444;text-align:center;padding:30px;font-size:11px">← Workout oben auswählen</div>`}
+  `;
+}
+
+/* ════════════════════════════════════════════
+   HISTORY TAB
+════════════════════════════════════════════ */
+function renderHistory() {
+  const done = [...state.workouts.filter(w=>w.done)].sort((a,b)=>(b.doneDate||'').localeCompare(a.doneDate||''));
+  return `
+  <div style="font-size:9px;color:#555;letter-spacing:2px;margin-bottom:10px">${done.length} WORKOUTS ABGESCHLOSSEN · ${done.length * 100} BASE XP</div>
+  ${done.length===0?'<div class="card" style="text-align:center;padding:30px;color:#444;font-size:11px">Noch kein Workout abgeschlossen.<br>Im LOG-Tab loslegen!</div>':''}
+  ${done.map(w => {
+    const ex = state.exercises.filter(e=>e.workoutId===w.id);
+    return `
+    <div class="hist-card">
+      <div class="hist-header">
+        <div>
+          <div class="hist-name">${w.name}</div>
+          <div class="hist-date">${fmtDate(w.doneDate)} · ${w.duration||'—'}min${w.rating?` · ${'⭐'.repeat(w.rating)}`:''}${w.newPR?' · 🏆':''}</div>
+        </div>
+        ${w.intensity?`<span class="badge badge-red">${w.intensity.split(' ')[0]}</span>`:`<span class="badge ${TYPE_BADGE[w.type]||'badge-gray'}">${w.type}</span>`}
+      </div>
+      ${w.userNotes?`<div style="font-size:10px;color:#666;margin-top:6px">${w.userNotes}</div>`:''}
+      ${w.nextTraining?`<div class="hist-next">→ NÄCHSTES MAL: ${w.nextTraining}</div>`:''}
+      ${ex.length?`<div style="margin-top:6px;border-top:1px solid #111;padding-top:6px">${ex.map(e=>`<div style="font-size:9px;color:#444;padding:1px 0">${e.name}${e.sets?` ${e.sets}×`:''  }${e.reps?`${e.reps} reps`:''}${e.weight?` @${e.weight}kg`:''}${e.duration?` ${e.duration}s`:''}${e.isPR?' 🏆':''}</div>`).join('')}</div>`:''}
+    </div>`;
+  }).join('')}`;
+}
+
+/* ════════════════════════════════════════════
+   CHARTS TAB
+════════════════════════════════════════════ */
+function renderChartsHTML() {
+  return `
+  <div class="card">
+    <div class="card-label label-yellow">⚡ XP VERLAUF</div>
+    <div class="chart-wrap"><canvas id="xpChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-label label-green">📊 WORKOUTS PRO WOCHE</div>
+    <div class="chart-wrap" style="height:160px"><canvas id="weekChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-label label-red">🎯 WORKOUT-TYPEN</div>
+    <div class="chart-wrap" style="height:160px"><canvas id="typeChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-label label-gray">⏱️ TRAININGSZEIT (MIN)</div>
+    <div class="chart-wrap"><canvas id="durChart"></canvas></div>
+  </div>`;
+}
+
+function renderCharts() {
+  const chartDefaults = {
+    plugins: { legend: { labels: { color:'#666', font:{ family:'Courier New', size:10 } } } },
+    scales: {
+      x: { ticks:{ color:'#444', font:{family:'Courier New',size:9} }, grid:{ color:'#111' } },
+      y: { ticks:{ color:'#444', font:{family:'Courier New',size:9} }, grid:{ color:'#111' } }
+    }
+  };
+
+  const done = [...state.workouts.filter(w=>w.done)].sort((a,b)=>(a.doneDate||'').localeCompare(b.doneDate||''));
+
+  // XP Chart
+  let xpCum = 0;
+  const xpData = done.map(w => { xpCum += 100+(w.newPR?50:0); return { x:fmtDate(w.doneDate), y:xpCum }; });
+  const c1 = document.getElementById('xpChart');
+  if (c1 && xpData.length) {
+    chartInstances.xp = new Chart(c1, {
+      type:'line',
+      data:{ labels:xpData.map(d=>d.x), datasets:[{ label:'XP', data:xpData.map(d=>d.y), borderColor:'#eab308', backgroundColor:'rgba(234,179,8,.1)', borderWidth:2, pointRadius:3, pointBackgroundColor:'#eab308', fill:true, tension:.3 }] },
+      options:{ ...chartDefaults, responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} } }
+    });
+  }
+
+  // Weekly workouts
+  const weeklyDone = Array.from({length:8},(_,i)=>state.workouts.filter(w=>w.done&&w.week===i+1).length);
+  const weeklyTarget = [4,5,5,5,5,5,5,5];
+  const c2 = document.getElementById('weekChart');
+  if (c2) {
+    chartInstances.week = new Chart(c2, {
+      type:'bar',
+      data:{
+        labels:['W1','W2','W3','W4','W5','W6','W7','W8'],
+        datasets:[
+          { label:'Erledigt', data:weeklyDone, backgroundColor:weeklyDone.map((d,i)=>d>=weeklyTarget[i]?'#22c55e':d>0?'#eab308':'#1a1a1a'), borderRadius:3 },
+          { label:'Ziel', data:weeklyTarget, backgroundColor:'transparent', borderColor:'#333', borderWidth:1, type:'line', pointRadius:0 }
+        ]
+      },
+      options:{ ...chartDefaults, responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} } }
+    });
+  }
+
+  // Type distribution
+  const typeCounts = Object.keys(TYPE_COLOR).map(t => state.workouts.filter(w=>w.done&&w.type===t).length);
+  const c3 = document.getElementById('typeChart');
+  if (c3) {
+    chartInstances.type = new Chart(c3, {
+      type:'doughnut',
+      data:{ labels:Object.keys(TYPE_COLOR), datasets:[{ data:typeCounts, backgroundColor:Object.values(TYPE_COLOR), borderColor:'#000', borderWidth:2 }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{ color:'#666', font:{family:'Courier New',size:9}, boxWidth:10, padding:8 } } } }
+    });
+  }
+
+  // Duration
+  const durData = done.filter(w=>w.duration).slice(-15);
+  const c4 = document.getElementById('durChart');
+  if (c4 && durData.length) {
+    chartInstances.dur = new Chart(c4, {
+      type:'bar',
+      data:{ labels:durData.map(w=>w.name.split('—')[0].trim()), datasets:[{ label:'Min', data:durData.map(w=>w.duration), backgroundColor:'#cc0000', borderRadius:3 }] },
+      options:{ ...chartDefaults, responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{ legend:{display:false} } }
+    });
+  }
+}
+
+/* ════════════════════════════════════════════
+   RECORDS TAB
+════════════════════════════════════════════ */
+function renderRecords() {
+  const exercises = [...new Set(state.records.map(r=>r.exercise))];
+  return `
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div style="font-size:9px;color:#555;letter-spacing:2px">${state.records.length} RECORDS · +${state.records.length*50} XP</div>
+    <button class="btn btn-yellow" onclick="toggleAddPR()">${showAddPR?'✕ ABBRECHEN':'+ NEUER PR'}</button>
+  </div>
+
+  ${showAddPR ? `
+  <div class="card-yellow">
+    <div class="card-label label-yellow">🏆 NEUEN RECORD EINTRAGEN</div>
+    <div class="inp-group"><div class="inp-label">ÜBUNG</div><input class="inp" id="pr-ex" value="${prForm.exercise}" placeholder="z.B. Pull-ups"></div>
+    <div class="form-grid-2">
+      <div class="inp-group"><div class="inp-label">WERT</div><input class="inp" type="number" id="pr-val" value="${prForm.value}" step="0.5"></div>
+      <div class="inp-group"><div class="inp-label">EINHEIT</div><select class="select" id="pr-unit"><option>reps</option><option>kg</option><option>sek</option><option>km</option><option>min/km</option><option>m</option><option>runden</option></select></div>
+    </div>
+    <div class="inp-group"><div class="inp-label">NOTIZEN</div><input class="inp" id="pr-notes" value="${prForm.notes}" placeholder="..."></div>
+    <button class="btn btn-yellow btn-full" onclick="savePR()">🏆 RECORD SPEICHERN +50 XP</button>
+  </div>
+  ` : ''}
+
+  ${state.records.length===0?'<div class="card" style="text-align:center;padding:30px;color:#444;font-size:11px">Noch keine Records.<br>Nach dem ersten Baseline-Test am FR eintragen!</div>':''}
+
+  ${exercises.map(ex => {
+    const recs = [...state.records.filter(r=>r.exercise===ex)].sort((a,b)=>b.date.localeCompare(a.date));
+    const best = recs[0];
+    return `
+    <div class="card-yellow">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-weight:bold;font-size:13px">${ex}</div>
+        <div style="font-size:20px;font-weight:bold;color:#eab308">${best.value} <span style="font-size:11px">${best.unit}</span></div>
+      </div>
+      ${recs.map((r,i)=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-top:1px solid #1a1400;font-size:10px">
+          <span style="color:#555">${fmtDate(r.date)}</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="${i===0?'color:#eab308;font-weight:bold':'color:#555'}">${r.value} ${r.unit}</span>
+            ${i===0?'<span class="badge badge-yellow">BEST</span>':''}
+            <button onclick="deletePR(${r.id})" style="background:none;border:none;color:#333;cursor:pointer;font-size:12px;padding:2px 4px">✕</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }).join('')}`;
+}
+
+/* ════════════════════════════════════════════
+   SKILLS TAB
+════════════════════════════════════════════ */
+function renderSkills() {
+  const latestBySkill = {};
+  for (const s of SKILLS_LIST) {
+    const sessions = [...state.skills.filter(x=>x.skill===s)].sort((a,b)=>b.date.localeCompare(a.date));
+    latestBySkill[s] = sessions[0]||null;
+  }
+
+  return `
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div style="font-size:9px;color:#555;letter-spacing:2px">${state.skills.filter(s=>s.milestone).length} MEILENSTEINE · +${state.skills.filter(s=>s.milestone).length*200} XP</div>
+    <button class="btn btn-yellow" onclick="toggleAddSkill()">${showAddSkill?'✕ ABBRECHEN':'+ SESSION'}</button>
+  </div>
+
+  ${showAddSkill ? `
+  <div class="card-yellow">
+    <div class="card-label label-yellow">🤸 SKILL SESSION EINTRAGEN</div>
+    <div class="inp-group"><div class="inp-label">SKILL</div>
+      <select class="select" id="sk-skill" onchange="updateSkillStages()">
+        ${SKILLS_LIST.map(s=>`<option ${skillForm.skill===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+    </div>
+    <div class="inp-group"><div class="inp-label">PROGRESSIONSSTUFE</div>
+      <select class="select" id="sk-stage">
+        ${(SKILL_STAGES[skillForm.skill]||[]).map(s=>`<option ${skillForm.stage===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-grid-2">
+      <div class="inp-group"><div class="inp-label">HOLD (SEK)</div><input class="inp" type="number" id="sk-hold" value="${skillForm.holdSecs}"></div>
+      <div class="inp-group"><div class="inp-label">VERSUCHE</div><input class="inp" type="number" id="sk-att" value="${skillForm.attempts}"></div>
+    </div>
+    <div class="inp-group"><div class="inp-label">NOTIZEN</div><input class="inp" id="sk-notes" value="${skillForm.notes}" placeholder="..."></div>
+    <label class="check-row" style="margin-bottom:10px"><input type="checkbox" id="sk-mile" ${skillForm.milestone?'checked':''}> ⭐ Meilenstein erreicht! (+200 XP)</label>
+    <button class="btn btn-yellow btn-full" onclick="saveSkill()">SKILL SESSION SPEICHERN</button>
+  </div>
+  ` : ''}
+
+  <!-- SKILL OVERVIEW GRID -->
+  <div class="skill-grid">
+    ${SKILLS_LIST.map(s => {
+      const latest = latestBySkill[s];
+      const stages = SKILL_STAGES[s];
+      const idx = latest ? stages.indexOf(latest.stage) : -1;
+      const pct = idx >= 0 ? ((idx+1)/stages.length)*100 : 0;
+      const col = SKILL_COLORS[s];
+      return `
+      <div class="skill-card" style="border:1px solid ${col}22">
+        <div class="skill-title" style="color:${col}">${s}</div>
+        <div class="skill-stage">${latest ? latest.stage : 'Noch keine Session'}</div>
+        ${latest?.holdSecs>0?`<div class="skill-hold" style="color:${col}">${latest.holdSecs}s</div>`:''}
+        <div class="prog-bar" style="margin-top:6px"><div class="prog-fill" style="width:${pct}%;background:${col}"></div></div>
+        <div style="font-size:8px;color:#444;margin-top:3px">${state.skills.filter(x=>x.skill===s).length} Sessions</div>
+      </div>`;
+    }).join('')}
+  </div>
+
+  <!-- SKILL PROGRESSION TABLE -->
+  <div class="card-yellow">
+    <div class="card-label label-yellow">🗺️ SKILL ROADMAP</div>
+    ${SKILLS_LIST.map(s=>`
+      <div style="margin-bottom:10px">
+        <div style="font-size:10px;font-weight:bold;color:${SKILL_COLORS[s]};margin-bottom:4px">${s}</div>
+        <div style="display:flex;gap:3px;flex-wrap:wrap">
+          ${SKILL_STAGES[s].map((st,i)=>{
+            const latest = latestBySkill[s];
+            const cur = SKILL_STAGES[s].indexOf(latest?.stage||'');
+            const done = i <= cur;
+            return `<div style="padding:2px 6px;border-radius:3px;font-size:8px;background:${done?SKILL_COLORS[s]+'22':'#111'};color:${done?SKILL_COLORS[s]:'#333'};border:1px solid ${done?SKILL_COLORS[s]+'44':'#1a1a1a'}">${st}</div>`;
+          }).join('')}
+        </div>
+      </div>
+    `).join('')}
+  </div>
+
+  <!-- SKILL HISTORY -->
+  ${SKILLS_LIST.map(s => {
+    const sessions = [...state.skills.filter(x=>x.skill===s)].sort((a,b)=>b.date.localeCompare(a.date));
+    if (!sessions.length) return '';
+    return `
+    <div class="card">
+      <div class="card-label" style="color:${SKILL_COLORS[s]}">${s} — ${sessions.length} Sessions</div>
+      ${sessions.slice(0,5).map(ses=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #0f0f0f;font-size:10px">
+          <div>
+            <span style="font-weight:bold">${ses.stage}</span>
+            ${ses.holdSecs>0?`<span style="color:#666"> · ${ses.holdSecs}s</span>`:''}
+            ${ses.milestone?'<span style="color:#eab308"> ⭐ +200 XP</span>':''}
+          </div>
+          <span style="color:#444">${fmtDate(ses.date)}</span>
+        </div>
+      `).join('')}
+    </div>`;
+  }).join('')}
+
+  ${state.skills.length===0?'<div class="card" style="text-align:center;padding:20px;color:#444;font-size:10px">Nach jeder Skill-Session eintragen — dann siehst du hier deine Progression über Wochen.</div>':''}
+  `;
+}
+
+/* ════════════════════════════════════════════
+   ACTIONS
+════════════════════════════════════════════ */
+function switchTab(t) {
+  currentTab = t;
+  document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.tab===t));
+  showAddExercise = false;
+  showAddPR = false;
+  showAddSkill = false;
+  render();
+  window.scrollTo(0,0);
+}
+
+function selectWorkout(id) {
+  selectedWorkoutId = id;
+  showAddExercise = false;
+  render();
+}
+
+function toggleAddEx() {
+  showAddExercise = !showAddExercise;
+  render();
+}
+
+function toggleAddPR() {
+  showAddPR = !showAddPR;
+  render();
+}
+
+function toggleAddSkill() {
+  showAddSkill = !showAddSkill;
+  render();
+}
+
+function setIntensity(val) {
+  logForm.intensity = val;
+  render();
+}
+
+function setRating(n) {
+  logForm.rating = n;
+  render();
+}
+
+function addBonusXP(amount, msg) {
+  state.bonusXP += amount;
+  saveState();
+  showToast(`⚡ ${msg}`);
+  updateHeader();
+  render();
+}
+
+function saveExercise() {
+  const name = document.getElementById('ex-name')?.value?.trim();
+  if (!name || !selectedWorkoutId) return;
+  const ex = {
+    id: Date.now(),
+    workoutId: selectedWorkoutId,
+    date: new Date().toISOString().split('T')[0],
+    name,
+    sets: +document.getElementById('ex-sets')?.value||0,
+    reps: +document.getElementById('ex-reps')?.value||0,
+    weight: +document.getElementById('ex-weight')?.value||0,
+    pause: +document.getElementById('ex-pause')?.value||0,
+    duration: +document.getElementById('ex-dur')?.value||0,
+    distance: +document.getElementById('ex-dist')?.value||0,
+    variant: document.getElementById('ex-var')?.value||'',
+    notes: document.getElementById('ex-notes')?.value||'',
+    isPR: document.getElementById('ex-pr')?.checked||false,
+  };
+  state.exercises.push(ex);
+  if (ex.isPR) {
+    state.records.push({ id:Date.now()+1, exercise:ex.name, value:ex.weight||ex.reps||ex.duration||0, unit:ex.weight?'kg':'reps', date:ex.date });
+    showToast('🏆 Neuer PR gespeichert! +50 XP');
+  } else {
+    showToast('💪 Übung gespeichert!');
+  }
+  exForm = { name:'', sets:'', reps:'', weight:'', pause:'', duration:'', distance:'', variant:'', notes:'', isPR:false };
+  showAddExercise = false;
+  saveState();
+  render();
+}
+
+function completeWorkout() {
+  if (!selectedWorkoutId) return;
+  const dur = +document.getElementById('log-dur')?.value||65;
+  const notes = document.getElementById('log-notes')?.value||'';
+  const next = document.getElementById('log-next')?.value||'';
+  const pr = document.getElementById('log-pr')?.checked||false;
+
+  state.workouts = state.workouts.map(w => w.id===selectedWorkoutId ? {
+    ...w, done:true, duration:dur, intensity:logForm.intensity, rating:logForm.rating,
+    userNotes:notes, nextTraining:next, newPR:pr, doneDate:new Date().toISOString().split('T')[0]
+  } : w);
+
+  if (pr) state.bonusXP += 50;
+  logForm = { duration:'65', intensity:'🔥 STARK', rating:4, userNotes:'', nextTraining:'', newPR:false };
+  selectedWorkoutId = null;
+  saveState();
+  showToast('⚡ Workout gespeichert! +100 XP');
+  setTimeout(() => { currentTab='hq'; render(); }, 300);
+}
+
+function savePR() {
+  const exercise = document.getElementById('pr-ex')?.value?.trim();
+  const value = +document.getElementById('pr-val')?.value||0;
+  const unit = document.getElementById('pr-unit')?.value||'reps';
+  const notes = document.getElementById('pr-notes')?.value||'';
+  if (!exercise || !value) return;
+  state.records.push({ id:Date.now(), exercise, value, unit, notes, date:new Date().toISOString().split('T')[0] });
+  prForm = { exercise, value:'', unit, notes:'' };
+  showAddPR = false;
+  saveState();
+  showToast('🏆 Record gespeichert! +50 XP');
+  render();
+}
+
+function deletePR(id) {
+  state.records = state.records.filter(r=>r.id!==id);
+  saveState();
+  render();
+}
+
+function saveSkill() {
+  const skill = document.getElementById('sk-skill')?.value;
+  const stage = document.getElementById('sk-stage')?.value;
+  const holdSecs = +document.getElementById('sk-hold')?.value||0;
+  const attempts = +document.getElementById('sk-att')?.value||0;
+  const milestone = document.getElementById('sk-mile')?.checked||false;
+  const notes = document.getElementById('sk-notes')?.value||'';
+  if (!skill) return;
+  state.skills.push({ id:Date.now(), skill, stage, holdSecs, attempts, milestone, notes, date:new Date().toISOString().split('T')[0] });
+  if (milestone) { state.bonusXP += 200; showToast('⭐ Meilenstein! +200 XP'); }
+  else showToast('🤸 Skill Session gespeichert!');
+  skillForm = { skill, stage, holdSecs:'', attempts:'', milestone:false, notes:'' };
+  showAddSkill = false;
+  saveState();
+  render();
+}
+
+function updateSkillStages() {
+  const skill = document.getElementById('sk-skill')?.value;
+  if (skill) {
+    skillForm.skill = skill;
+    skillForm.stage = SKILL_STAGES[skill][0];
+    const sel = document.getElementById('sk-stage');
+    if (sel) { sel.innerHTML = (SKILL_STAGES[skill]||[]).map(s=>`<option>${s}</option>`).join(''); }
+  }
+}
+
+/* ════════════════════════════════════════════
+   EVENT LISTENERS
+════════════════════════════════════════════ */
+function attachListeners() {
+  document.querySelectorAll('.tab').forEach(el => {
+    el.onclick = () => switchTab(el.dataset.tab);
+  });
+}
+
+/* ════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════ */
+/* ════════════════════════════════════════════
+   PWA SETUP
+════════════════════════════════════════════ */
+(function() {
+  // Generate icon via canvas
+  function makeIcon(size) {
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const x = c.getContext('2d');
+    // Background
+    x.fillStyle = '#000';
+    x.fillRect(0,0,size,size);
+    // Red border
+    const b = size*0.06;
+    x.strokeStyle = '#cc0000';
+    x.lineWidth = b;
+    x.strokeRect(b/2,b/2,size-b,size-b);
+    // Skull
+    x.font = `${size*0.52}px serif`;
+    x.textAlign = 'center';
+    x.textBaseline = 'middle';
+    x.fillText('☠️', size/2, size*0.46);
+    // Label
+    x.font = `bold ${size*0.11}px 'Courier New'`;
+    x.fillStyle = '#cc0000';
+    x.fillText('OPERATOR HQ', size/2, size*0.84);
+    return c.toDataURL('image/png');
+  }
+
+  const icon192 = makeIcon(192);
+  const icon512 = makeIcon(512);
+
+  // Apple touch icon
+  document.getElementById('pwa-icon').href = icon192;
+
+  // Manifest
+  const manifest = {
+    name: '☠️ OPERATOR HQ',
+    short_name: 'OPERATOR HQ',
+    description: 'Operator Training Intelligence System — Phase 1',
+    start_url: './',
+    display: 'standalone',
+    background_color: '#000000',
+    theme_color: '#000000',
+    orientation: 'portrait-primary',
+    icons: [
+      { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+      { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+    ]
+  };
+  const mBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+  document.getElementById('pwa-manifest').href = URL.createObjectURL(mBlob);
+
+  // Service Worker (via blob — caches page for offline)
+  if ('serviceWorker' in navigator) {
+    const swCode = `
+const CACHE = 'operator-hq-cache-v1';
+self.addEventListener('install', e => {
+  self.skipWaiting();
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+self.addEventListener('fetch', e => {
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      const fetchPromise = fetch(e.request).then(res => {
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return res;
+      }).catch(() => cached);
+      return cached || fetchPromise;
+    })
+  );
+});`;
+    const swBlob = new Blob([swCode], { type: 'application/javascript' });
+    const swUrl = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swUrl, { scope: './' }).catch(() => {});
+  }
+
+  // Android install prompt
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const banner = document.getElementById('install-banner');
+    if (banner) banner.classList.add('show');
+  });
+  const installBtn = document.getElementById('install-btn');
+  if (installBtn) {
+    installBtn.onclick = async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      document.getElementById('install-banner').classList.remove('show');
+      if (outcome === 'accepted') showToast('⚡ App installiert!');
+    };
+  }
+  const dismissBtn = document.getElementById('install-dismiss');
+  if (dismissBtn) dismissBtn.onclick = () => document.getElementById('install-banner').classList.remove('show');
+
+  window.addEventListener('appinstalled', () => showToast('☠️ OPERATOR HQ installiert!'));
+
+  // iOS hint — show once if not standalone
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone === true;
+  if (isIOS && !isStandalone && !localStorage.getItem('ios-hint-shown')) {
+    setTimeout(() => {
+      const hint = document.getElementById('ios-hint');
+      if (hint) hint.classList.add('show');
+      localStorage.setItem('ios-hint-shown', '1');
+    }, 3000);
+  }
+})();
+
+// Select next pending workout by default
+const nextPending = state.workouts.filter(w=>!w.done).sort((a,b)=>a.date.localeCompare(b.date))[0];
+if (nextPending) selectedWorkoutId = nextPending.id;
+
+render();
+</script>
+</body>
+</html>
