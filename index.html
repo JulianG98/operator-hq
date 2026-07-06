@@ -617,6 +617,62 @@ function shiftDate(dateStr, days) {
 }
 
 /* ════════════════════════════════════════════
+   TAGESBERICHT
+════════════════════════════════════════════ */
+function generateDayReport(date) {
+  date = date || new Date().toISOString().split('T')[0];
+  const targets = getTargets();
+  const workoutsToday = state.workouts.filter(w => w.done && w.doneDate === date);
+  const foodToday = getFoodLogForDate(date);
+  const totals = sumMacros(foodToday);
+  const bodyToday = state.bodyLog.find(b => b.date === date);
+
+  const lines = [];
+  lines.push(`☠️ OPERATOR HQ — TAGESBERICHT ${fmtDate(date)}`);
+  lines.push('');
+  lines.push('TRAINING:');
+  if (workoutsToday.length) {
+    workoutsToday.forEach(w => {
+      lines.push(`- ${w.name} · ${w.duration||'—'}min · Intensität ${w.intensity||'—'} · ${w.rating||'—'}/5⭐${w.newPR?' · 🏆 PR':''}`);
+      if (w.userNotes) lines.push(`  Notizen: ${w.userNotes}`);
+      state.exercises.filter(e => e.workoutId === w.id).forEach(e => {
+        const vals = [e.sets&&`${e.sets}x`,e.reps&&`${e.reps} reps`,e.weight&&`${e.weight}kg`,e.duration&&`${e.duration}s`].filter(Boolean).join(' ');
+        lines.push(`  · ${e.name}: ${vals}${e.isPR?' 🏆':''}`);
+      });
+    });
+  } else {
+    lines.push('- Kein Workout heute abgeschlossen.');
+  }
+  lines.push('');
+  lines.push(`ERNÄHRUNG (Ziel ${targets.kcal}kcal / P${targets.protein} F${targets.fat} K${targets.carbs}):`);
+  lines.push(`IST: ${Math.round(totals.kcal)}kcal / P${Math.round(totals.protein)} F${Math.round(totals.fat)} K${Math.round(totals.carbs)}`);
+  MEAL_TYPES.forEach(meal => {
+    const items = foodToday.filter(f => f.meal === meal);
+    if (items.length) lines.push(`${meal}: ${items.map(i => `${i.foodName} ${i.grams}g`).join(', ')}`);
+  });
+  if (!foodToday.length) lines.push('- Nichts geloggt.');
+  lines.push('');
+  lines.push('KÖRPER:');
+  lines.push(bodyToday
+    ? `- Gewicht ${bodyToday.weight}kg${bodyToday.bodyFat?` · KFA ${bodyToday.bodyFat}%`:''}${bodyToday.waist?` · Taille ${bodyToday.waist}cm`:''}`
+    : '- Keine Messung heute.');
+  return lines.join('\n');
+}
+
+function copyDayReport() {
+  const report = generateDayReport();
+  const ta = document.getElementById('day-report-preview');
+  if (ta) { ta.value = report; ta.style.display = 'block'; }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(report)
+      .then(() => showToast('📋 Kopiert! Jetzt an Claude schicken.'))
+      .catch(() => showToast('📋 Bericht unten — manuell kopieren'));
+  } else {
+    showToast('📋 Bericht unten — manuell kopieren');
+  }
+}
+
+/* ════════════════════════════════════════════
    HEADER UPDATE
 ════════════════════════════════════════════ */
 function updateHeader() {
@@ -749,6 +805,14 @@ function renderHQ() {
     ${lastW.nextTraining ? `<div class="next-box" style="margin-top:8px"><div class="next-box-label">→ NÄCHSTES MAL</div><div class="next-box-text">${lastW.nextTraining}</div></div>` : ''}
   </div>
   ` : ''}
+
+  <!-- DAY REPORT -->
+  <div class="card" style="border-color:#1e3a5f">
+    <div class="card-label label-blue">📤 TAGESBERICHT FÜR CLAUDE</div>
+    <div style="font-size:9px;color:#666;margin-bottom:8px">Fasst Training + Ernährung + Körper von heute zusammen — kopieren und abends an Claude schicken für Feedback.</div>
+    <button class="btn btn-blue btn-full" onclick="copyDayReport()">📋 BERICHT KOPIEREN</button>
+    <textarea id="day-report-preview" class="inp" rows="8" readonly style="margin-top:8px;font-size:10px;display:none;white-space:pre-wrap"></textarea>
+  </div>
 
   <!-- XP QUICK ACTIONS -->
   <div class="card-yellow">
