@@ -385,6 +385,49 @@ const FOOD_DB = [
   {name:"Milch 1.5%", kcal:47, protein:3.4, carbs:4.9, fat:1.5},
 ];
 
+/* Fertige Tages-Ernährungspläne — ~2000kcal / hohe Protein / passend zu FOOD_DB.
+   Per Klick in den Food Log des gewählten Tages ladbar. */
+const MEAL_PLANS = {
+  A: {
+    label: "TAG A — Hähnchen & Reis",
+    summary: "~2040 kcal · 248g P · 55g F · 136g C",
+    items: [
+      {meal:"Frühstück", foodName:"Magerquark", grams:300},
+      {meal:"Frühstück", foodName:"Eier (ganz)", grams:55},
+      {meal:"Frühstück", foodName:"Haferflocken", grams:30},
+      {meal:"Mittagessen", foodName:"Hähnchenbrust (roh)", grams:200},
+      {meal:"Mittagessen", foodName:"Reis, gekocht", grams:100},
+      {meal:"Mittagessen", foodName:"Brokkoli", grams:150},
+      {meal:"Snack", foodName:"Whey Protein Pulver", grams:40},
+      {meal:"Snack", foodName:"Banane", grams:120},
+      {meal:"Abendessen", foodName:"Rinderfilet (roh)", grams:180},
+      {meal:"Abendessen", foodName:"Süßkartoffel, gekocht", grams:100},
+      {meal:"Abendessen", foodName:"Olivenöl", grams:8},
+      {meal:"Snack", foodName:"Skyr", grams:200},
+      {meal:"Snack", foodName:"Mandeln", grams:30},
+      {meal:"Snack", foodName:"Hähnchenbrust (roh)", grams:100},
+    ]
+  },
+  B: {
+    label: "TAG B — Lachs & Linsen",
+    summary: "~2000 kcal · 225g P · 66g F · 123g C",
+    items: [
+      {meal:"Frühstück", foodName:"Eier (ganz)", grams:165},
+      {meal:"Frühstück", foodName:"Skyr", grams:200},
+      {meal:"Mittagessen", foodName:"Hähnchenbrust (roh)", grams:220},
+      {meal:"Mittagessen", foodName:"Linsen, gekocht", grams:150},
+      {meal:"Mittagessen", foodName:"Brokkoli", grams:100},
+      {meal:"Snack", foodName:"Whey Protein Pulver", grams:30},
+      {meal:"Snack", foodName:"Apfel", grams:150},
+      {meal:"Abendessen", foodName:"Lachs (roh)", grams:180},
+      {meal:"Abendessen", foodName:"Kartoffeln, gekocht", grams:200},
+      {meal:"Abendessen", foodName:"Olivenöl", grams:5},
+      {meal:"Snack", foodName:"Magerquark", grams:250},
+      {meal:"Snack", foodName:"Erdnussbutter", grams:15},
+    ]
+  }
+};
+
 const WORKOUT_SEED = [
   {id:1001,name:"W1 DI — KONDITION",type:"KONDITION",date:"2026-06-30",week:1,notes:"5min Springseil | 2km @Komfort-Pace | 4×2min Boxsack @Max (60s Pause) | 6×30s Battle Rope Tabata",nextSession:"W2: 3km statt 2km | Boxing +1 Runde (5×2min) | Battle Rope gleich | Pace steigern"},
   {id:1002,name:"W1 MI — PUSH + Planche",type:"PUSH",date:"2026-07-01",week:1,notes:"Planche Lean 5×10s | OHP 4×10 @leicht | Dips 4×10 | Push-ups 5×20 | Slam Ball rot. 8/Seite | TGU 3×3/Seite",nextSession:"W2: OHP +2.5kg | Dips 4×12 | Push-ups 5×25 | TGU sauberer"},
@@ -533,14 +576,16 @@ function getUserProfile() {
   };
 }
 
+const KCAL_TARGET = 2000; // fest gesetzt (aggressives Defizit fürs Ziel bis Ende August)
+
 function getTargets() {
   const { weight, bodyFat } = getUserProfile();
   const lbm = weight * (1 - bodyFat/100);
   const bmr = 370 + 21.6 * lbm;
   const tdee = bmr * 1.55; // sitzend + 5x Training/Woche
-  const kcal = Math.round(tdee - 800); // ~800kcal Defizit
-  const protein = Math.round(weight * 2.2);
-  const fat = Math.round(weight * 0.7);
+  const kcal = KCAL_TARGET;
+  const protein = Math.round(weight * 2.3); // hoch gehalten, um Muskeln im aggressiven Defizit zu schützen
+  const fat = Math.round(weight * 0.55);
   const carbs = Math.max(0, Math.round((kcal - protein*4 - fat*9) / 4));
   return { bmr:Math.round(bmr), tdee:Math.round(tdee), kcal, protein, fat, carbs };
 }
@@ -1163,11 +1208,28 @@ function renderNutrition() {
   <!-- TARGETS -->
   <div class="card-green">
     <div class="card-label label-green">🎯 TAGESZIEL (auto-berechnet)</div>
-    <div style="font-size:9px;color:#666;margin-bottom:10px">TDEE ~${targets.tdee} kcal · Defizit ~800 kcal → Ziel ${targets.kcal} kcal</div>
+    <div style="font-size:9px;color:#666;margin-bottom:10px">TDEE ~${targets.tdee} kcal · Defizit ~${targets.tdee-targets.kcal} kcal → Ziel ${targets.kcal} kcal</div>
     ${macroBar('KCAL', totals.kcal, targets.kcal, '#ef4444', '')}
     ${macroBar('PROTEIN', totals.protein, targets.protein, '#3b82f6', 'g')}
     ${macroBar('FETT', totals.fat, targets.fat, '#eab308', 'g')}
     ${macroBar('KOHLENHYDRATE', totals.carbs, targets.carbs, '#22c55e', 'g')}
+  </div>
+
+  <!-- MEAL PLANS -->
+  <div class="card-yellow">
+    <div class="card-label label-yellow">📋 ERNÄHRUNGSPLAN — FERTIGE TAGE LADEN</div>
+    <div style="font-size:9px;color:#666;margin-bottom:8px">Statt zu improvisieren: kompletten Tag mit 1 Klick in den Log für ${fmtDate(nutriDate)} laden.</div>
+    ${Object.keys(MEAL_PLANS).map(k => {
+      const p = MEAL_PLANS[k];
+      return `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a1400">
+        <div>
+          <div style="font-weight:bold;font-size:11px">${p.label}</div>
+          <div style="font-size:9px;color:#666">${p.summary}</div>
+        </div>
+        <button class="btn btn-yellow" onclick="loadMealPlan('${k}')">LADEN</button>
+      </div>`;
+    }).join('')}
   </div>
 
   <!-- ADD FOOD -->
@@ -1528,6 +1590,26 @@ function saveFoodEntry() {
   showAddFood = false;
   saveState();
   showToast('🍗 Essen gespeichert!');
+  render();
+}
+
+function loadMealPlan(key) {
+  const plan = MEAL_PLANS[key];
+  if (!plan) return;
+  const existing = getFoodLogForDate(nutriDate);
+  if (existing.length > 0 && !confirm(`Für ${fmtDate(nutriDate)} sind schon Einträge vorhanden. ${plan.label} zusätzlich hinzufügen?`)) return;
+  const allFoods = getAllFoods();
+  plan.items.forEach((item, i) => {
+    const food = allFoods.find(f => f.name === item.foodName);
+    if (!food) return;
+    const factor = item.grams / 100;
+    state.foodLog.push({
+      id: Date.now()+i, date: nutriDate, meal: item.meal, foodName: item.foodName, grams: item.grams,
+      kcal: food.kcal*factor, protein: food.protein*factor, carbs: food.carbs*factor, fat: food.fat*factor
+    });
+  });
+  saveState();
+  showToast(`📋 ${plan.label} geladen!`);
   render();
 }
 
