@@ -288,6 +288,8 @@ tr:hover td { background:#0f0f0f; }
   <button class="tab" data-tab="charts">📈 CHARTS</button>
   <button class="tab" data-tab="records">🏆 PRs</button>
   <button class="tab" data-tab="skills">🤸 SKILLS</button>
+  <button class="tab" data-tab="nutrition">🍗 ERNÄHRUNG</button>
+  <button class="tab" data-tab="body">⚖️ KÖRPER</button>
 </div>
 
 <!-- CONTENT -->
@@ -350,6 +352,39 @@ const SKILL_STAGES = {
 };
 const SKILL_COLORS = {"Handstand":"#eab308","Planche":"#f97316","Human Flag":"#ef4444","L-Sit":"#3b82f6"};
 
+const MEAL_TYPES = ["Frühstück","Mittagessen","Abendessen","Snack"];
+
+/* Referenz-Lebensmittel-DB: Werte pro 100g [kcal, protein, carbs, fat] */
+const FOOD_DB = [
+  {name:"Hähnchenbrust (roh)", kcal:165, protein:31, carbs:0, fat:3.6},
+  {name:"Rind Hackfleisch 5%", kcal:137, protein:21, carbs:0, fat:5},
+  {name:"Lachs (roh)", kcal:208, protein:20, carbs:0, fat:13},
+  {name:"Rinderfilet (roh)", kcal:133, protein:22, carbs:0, fat:4.5},
+  {name:"Thunfisch (Dose, Wasser)", kcal:116, protein:26, carbs:0, fat:1},
+  {name:"Eier (ganz)", kcal:155, protein:13, carbs:1.1, fat:11},
+  {name:"Magerquark", kcal:67, protein:12, carbs:4, fat:0.2},
+  {name:"Skyr", kcal:66, protein:11, carbs:4, fat:0.2},
+  {name:"Griechischer Joghurt 0.2%", kcal:59, protein:10, carbs:3.6, fat:0.4},
+  {name:"Whey Protein Pulver", kcal:380, protein:75, carbs:8, fat:6},
+  {name:"Haferflocken", kcal:372, protein:13.5, carbs:60, fat:7},
+  {name:"Reis, gekocht", kcal:130, protein:2.7, carbs:28, fat:0.3},
+  {name:"Nudeln, gekocht", kcal:131, protein:5, carbs:25, fat:1.1},
+  {name:"Kartoffeln, gekocht", kcal:87, protein:2, carbs:20, fat:0.1},
+  {name:"Süßkartoffel, gekocht", kcal:90, protein:2, carbs:21, fat:0.1},
+  {name:"Vollkornbrot", kcal:247, protein:13, carbs:41, fat:3.4},
+  {name:"Reiswaffeln", kcal:387, protein:8, carbs:81, fat:2.8},
+  {name:"Linsen, gekocht", kcal:116, protein:9, carbs:20, fat:0.4},
+  {name:"Brokkoli", kcal:34, protein:2.8, carbs:7, fat:0.4},
+  {name:"Banane", kcal:89, protein:1.1, carbs:23, fat:0.3},
+  {name:"Apfel", kcal:52, protein:0.3, carbs:14, fat:0.2},
+  {name:"Avocado", kcal:160, protein:2, carbs:9, fat:15},
+  {name:"Mandeln", kcal:579, protein:21, carbs:22, fat:50},
+  {name:"Erdnussbutter", kcal:588, protein:25, carbs:20, fat:50},
+  {name:"Olivenöl", kcal:884, protein:0, carbs:0, fat:100},
+  {name:"Butter", kcal:717, protein:0.9, carbs:0.1, fat:81},
+  {name:"Milch 1.5%", kcal:47, protein:3.4, carbs:4.9, fat:1.5},
+];
+
 const WORKOUT_SEED = [
   {id:1001,name:"W1 DI — KONDITION",type:"KONDITION",date:"2026-06-30",week:1,notes:"5min Springseil | 2km @Komfort-Pace | 4×2min Boxsack @Max (60s Pause) | 6×30s Battle Rope Tabata",nextSession:"W2: 3km statt 2km | Boxing +1 Runde (5×2min) | Battle Rope gleich | Pace steigern"},
   {id:1002,name:"W1 MI — PUSH + Planche",type:"PUSH",date:"2026-07-01",week:1,notes:"Planche Lean 5×10s | OHP 4×10 @leicht | Dips 4×10 | Push-ups 5×20 | Slam Ball rot. 8/Seite | TGU 3×3/Seite",nextSession:"W2: OHP +2.5kg | Dips 4×12 | Push-ups 5×25 | TGU sauberer"},
@@ -403,7 +438,10 @@ function defaultState() {
     exercises: [],
     records: [],
     skills: [],
-    bonusXP: 0
+    bonusXP: 0,
+    foods: [],
+    foodLog: [],
+    bodyLog: []
   };
 }
 
@@ -415,7 +453,7 @@ function saveState() {
   try { localStorage.setItem(SK, JSON.stringify(state)); } catch {}
 }
 
-let state = loadState() || defaultState();
+let state = Object.assign(defaultState(), loadState() || {});
 let currentTab = 'hq';
 let selectedWorkoutId = null;
 let showAddExercise = false;
@@ -428,6 +466,15 @@ let logForm = { duration:'65', intensity:'🔥 STARK', rating:4, userNotes:'', n
 let exForm = { name:'', sets:'', reps:'', weight:'', pause:'', duration:'', distance:'', variant:'', notes:'', isPR:false };
 let prForm = { exercise:'Pull-ups', value:'', unit:'reps', notes:'' };
 let skillForm = { skill:'Handstand', stage:'Wall HS Bauch', holdSecs:'', attempts:'', milestone:false, notes:'' };
+
+// Nutrition / Body tracking state
+let nutriDate = new Date().toISOString().split('T')[0];
+let showAddFood = false;
+let foodForm = { foodName:FOOD_DB[0].name, grams:'100', meal:'Frühstück' };
+let showAddCustomFood = false;
+let customFoodForm = { name:'', kcal:'', protein:'', carbs:'', fat:'' };
+let showAddBody = false;
+let bodyForm = { date:new Date().toISOString().split('T')[0], weight:'', bodyFat:'', waist:'', notes:'' };
 
 /* ════════════════════════════════════════════
    CALCULATIONS
@@ -467,6 +514,64 @@ function fmtDate(d) {
 }
 
 /* ════════════════════════════════════════════
+   NUTRITION / BODY CALCULATIONS
+════════════════════════════════════════════ */
+const PROFILE_BASE = { heightCm:185, age:27, sex:'m', startWeight:105, startBodyFat:22 };
+const GOAL_DATE = '2026-08-31';
+const GOAL_BODYFAT = 14;
+
+function getLatestBody() {
+  return [...state.bodyLog].sort((a,b)=>b.date.localeCompare(a.date))[0] || null;
+}
+
+function getUserProfile() {
+  const latest = getLatestBody();
+  return {
+    ...PROFILE_BASE,
+    weight: latest?.weight || PROFILE_BASE.startWeight,
+    bodyFat: (latest?.bodyFat ?? PROFILE_BASE.startBodyFat)
+  };
+}
+
+function getTargets() {
+  const { weight, bodyFat } = getUserProfile();
+  const lbm = weight * (1 - bodyFat/100);
+  const bmr = 370 + 21.6 * lbm;
+  const tdee = bmr * 1.55; // sitzend + 5x Training/Woche
+  const kcal = Math.round(tdee - 800); // ~800kcal Defizit
+  const protein = Math.round(weight * 2.2);
+  const fat = Math.round(weight * 0.7);
+  const carbs = Math.max(0, Math.round((kcal - protein*4 - fat*9) / 4));
+  return { bmr:Math.round(bmr), tdee:Math.round(tdee), kcal, protein, fat, carbs };
+}
+
+function getGoalWeight() {
+  const { weight, bodyFat } = getUserProfile();
+  const lbm = weight * (1 - bodyFat/100);
+  return lbm / (1 - GOAL_BODYFAT/100);
+}
+
+function getAllFoods() {
+  return [...FOOD_DB, ...state.foods];
+}
+
+function getFoodLogForDate(date) {
+  return state.foodLog.filter(f => f.date === date);
+}
+
+function sumMacros(entries) {
+  return entries.reduce((acc,e) => ({
+    kcal: acc.kcal + e.kcal, protein: acc.protein + e.protein,
+    carbs: acc.carbs + e.carbs, fat: acc.fat + e.fat
+  }), { kcal:0, protein:0, carbs:0, fat:0 });
+}
+
+function shiftDate(dateStr, days) {
+  const d = new Date(dateStr); d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
+}
+
+/* ════════════════════════════════════════════
    HEADER UPDATE
 ════════════════════════════════════════════ */
 function updateHeader() {
@@ -502,18 +607,21 @@ function render() {
   c.innerHTML = renderTab();
   attachListeners();
   if (currentTab === 'charts') setTimeout(renderCharts, 50);
+  if (currentTab === 'body') setTimeout(renderBodyChart, 50);
   updateHeader();
 }
 
 function renderTab() {
   switch(currentTab) {
-    case 'hq':      return renderHQ();
-    case 'log':     return renderLog();
-    case 'history': return renderHistory();
-    case 'charts':  return renderChartsHTML();
-    case 'records': return renderRecords();
-    case 'skills':  return renderSkills();
-    default:        return renderHQ();
+    case 'hq':        return renderHQ();
+    case 'log':       return renderLog();
+    case 'history':   return renderHistory();
+    case 'charts':    return renderChartsHTML();
+    case 'records':   return renderRecords();
+    case 'skills':    return renderSkills();
+    case 'nutrition': return renderNutrition();
+    case 'body':      return renderBody();
+    default:          return renderHQ();
   }
 }
 
@@ -1019,6 +1127,220 @@ function renderSkills() {
 }
 
 /* ════════════════════════════════════════════
+   NUTRITION TAB
+════════════════════════════════════════════ */
+function macroBar(label, cur, target, color, unit) {
+  const pct = target > 0 ? Math.min(100, (cur/target)*100) : 0;
+  const over = target > 0 && cur > target;
+  return `
+  <div style="margin-bottom:8px">
+    <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px">
+      <span style="color:#888">${label}</span>
+      <span style="color:${over?'#ef4444':'#aaa'}">${Math.round(cur)}${unit} / ${Math.round(target)}${unit}</span>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${over?'#ef4444':color}"></div></div>
+  </div>`;
+}
+
+function renderNutrition() {
+  const targets = getTargets();
+  const dayEntries = getFoodLogForDate(nutriDate);
+  const totals = sumMacros(dayEntries);
+  const allFoods = getAllFoods();
+  const isToday = nutriDate === new Date().toISOString().split('T')[0];
+
+  return `
+  <!-- DATE NAV -->
+  <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px">
+    <button class="btn btn-gray" onclick="changeNutriDate(-1)">◀</button>
+    <div style="text-align:center">
+      <div style="font-weight:bold;font-size:13px">${fmtDate(nutriDate)}</div>
+      ${!isToday?'<div style="font-size:9px;color:#666;cursor:pointer" onclick="goToToday()">→ HEUTE</div>':'<div style="font-size:9px;color:#22c55e">HEUTE</div>'}
+    </div>
+    <button class="btn btn-gray" onclick="changeNutriDate(1)">▶</button>
+  </div>
+
+  <!-- TARGETS -->
+  <div class="card-green">
+    <div class="card-label label-green">🎯 TAGESZIEL (auto-berechnet)</div>
+    <div style="font-size:9px;color:#666;margin-bottom:10px">TDEE ~${targets.tdee} kcal · Defizit ~800 kcal → Ziel ${targets.kcal} kcal</div>
+    ${macroBar('KCAL', totals.kcal, targets.kcal, '#ef4444', '')}
+    ${macroBar('PROTEIN', totals.protein, targets.protein, '#3b82f6', 'g')}
+    ${macroBar('FETT', totals.fat, targets.fat, '#eab308', 'g')}
+    ${macroBar('KOHLENHYDRATE', totals.carbs, targets.carbs, '#22c55e', 'g')}
+  </div>
+
+  <!-- ADD FOOD -->
+  <div class="card" style="border-color:#1e3a5f">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="card-label label-blue" style="margin-bottom:0">🍗 ESSEN LOGGEN</div>
+      <button class="btn btn-blue" onclick="toggleAddFood()">${showAddFood?'✕ ABBRECHEN':'+ HINZUFÜGEN'}</button>
+    </div>
+    ${showAddFood ? `
+    <div style="background:#080d14;border:1px solid #1e3a5f;border-radius:8px;padding:10px">
+      <div class="inp-group">
+        <div class="inp-label">MAHLZEIT</div>
+        <select class="select" id="food-meal">
+          ${MEAL_TYPES.map(m=>`<option ${foodForm.meal===m?'selected':''}>${m}</option>`).join('')}
+        </select>
+      </div>
+      <div class="inp-group">
+        <div class="inp-label">LEBENSMITTEL</div>
+        <select class="select" id="food-name">
+          ${allFoods.map(f=>`<option ${foodForm.foodName===f.name?'selected':''}>${f.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="inp-group"><div class="inp-label">GRAMM</div><input class="inp" type="number" id="food-grams" value="${foodForm.grams}"></div>
+      <button class="btn btn-blue btn-full" onclick="saveFoodEntry()">SPEICHERN</button>
+      <div style="text-align:center;margin-top:8px">
+        <span style="font-size:9px;color:#555;cursor:pointer;text-decoration:underline" onclick="toggleAddCustomFood()">${showAddCustomFood?'✕ eigenes Lebensmittel abbrechen':'+ eigenes Lebensmittel anlegen'}</span>
+      </div>
+      ${showAddCustomFood?`
+      <div style="background:#0a0a0a;border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:8px">
+        <div class="inp-group"><div class="inp-label">NAME</div><input class="inp" id="cf-name" value="${customFoodForm.name}" placeholder="z.B. Protein-Pancakes"></div>
+        <div class="form-grid-3">
+          <div class="inp-group"><div class="inp-label">KCAL/100G</div><input class="inp" type="number" id="cf-kcal" value="${customFoodForm.kcal}"></div>
+          <div class="inp-group"><div class="inp-label">PROTEIN/100G</div><input class="inp" type="number" id="cf-protein" value="${customFoodForm.protein}"></div>
+          <div class="inp-group"><div class="inp-label">FETT/100G</div><input class="inp" type="number" id="cf-fat" value="${customFoodForm.fat}"></div>
+        </div>
+        <div class="inp-group"><div class="inp-label">CARBS/100G</div><input class="inp" type="number" id="cf-carbs" value="${customFoodForm.carbs}"></div>
+        <button class="btn btn-gray btn-full" onclick="saveCustomFood()">LEBENSMITTEL ANLEGEN</button>
+      </div>`:''}
+    </div>` : ''}
+  </div>
+
+  <!-- FOOD LOG LIST -->
+  ${MEAL_TYPES.map(meal => {
+    const items = dayEntries.filter(e=>e.meal===meal);
+    if (!items.length) return '';
+    const mealTotals = sumMacros(items);
+    return `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div class="card-label label-gray" style="margin-bottom:0">${meal.toUpperCase()}</div>
+        <span style="font-size:9px;color:#555">${Math.round(mealTotals.kcal)} kcal</span>
+      </div>
+      ${items.map(e=>`
+        <div class="ex-row">
+          <div>
+            <div class="ex-name">${e.foodName}</div>
+            <div class="ex-vals">${e.grams}g · ${Math.round(e.kcal)}kcal · P${Math.round(e.protein)} K${Math.round(e.carbs)} F${Math.round(e.fat)}</div>
+          </div>
+          <button onclick="deleteFoodEntry(${e.id})" style="background:none;border:none;color:#333;cursor:pointer;font-size:12px;padding:2px 4px">✕</button>
+        </div>
+      `).join('')}
+    </div>`;
+  }).join('')}
+  ${dayEntries.length===0?'<div class="card" style="text-align:center;padding:20px;color:#444;font-size:11px">Noch nichts geloggt für diesen Tag.</div>':''}
+  `;
+}
+
+/* ════════════════════════════════════════════
+   BODY TAB
+════════════════════════════════════════════ */
+function renderBody() {
+  const log = [...state.bodyLog].sort((a,b)=>b.date.localeCompare(a.date));
+  const latest = log[0];
+  const goalWeight = getGoalWeight();
+  const daysLeft = Math.ceil((new Date(GOAL_DATE) - new Date()) / 86400000);
+
+  return `
+  <!-- GOAL CARD -->
+  <div class="card-red">
+    <div class="card-label label-red">🎯 ZIEL</div>
+    <div style="display:flex;justify-content:space-between">
+      <div>
+        <div style="font-size:20px;font-weight:bold;color:#ef4444">&lt;${GOAL_BODYFAT}% KFA</div>
+        <div style="font-size:9px;color:#666;margin-top:2px">bis ${fmtDate(GOAL_DATE)} (${daysLeft>0?daysLeft:0} Tage)</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:20px;font-weight:bold;color:#eab308">~${goalWeight.toFixed(1)}kg</div>
+        <div style="font-size:9px;color:#666;margin-top:2px">Zielgewicht (bei aktueller Magermasse)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LATEST -->
+  ${latest?`
+  <div class="stats-grid">
+    <div class="stat-box"><div class="stat-val" style="color:#3b82f6">${latest.weight}kg</div><div class="stat-lbl">GEWICHT</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:#eab308">${latest.bodyFat||'—'}${latest.bodyFat?'%':''}</div><div class="stat-lbl">KFA</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:#22c55e">${latest.waist||'—'}${latest.waist?'cm':''}</div><div class="stat-lbl">TAILLE</div></div>
+  </div>`:''}
+
+  <!-- CHART -->
+  ${log.length>=2?`
+  <div class="card">
+    <div class="card-label label-gray">📈 GEWICHTSVERLAUF</div>
+    <div class="chart-wrap"><canvas id="bodyChart"></canvas></div>
+  </div>`:''}
+
+  <!-- ADD ENTRY -->
+  <div class="card" style="border-color:#1e3a5f">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="card-label label-blue" style="margin-bottom:0">⚖️ EINTRAG HINZUFÜGEN</div>
+      <button class="btn btn-blue" onclick="toggleAddBody()">${showAddBody?'✕ ABBRECHEN':'+ NEU'}</button>
+    </div>
+    ${showAddBody?`
+    <div style="background:#080d14;border:1px solid #1e3a5f;border-radius:8px;padding:10px">
+      <div class="inp-group"><div class="inp-label">DATUM</div><input class="inp" type="date" id="body-date" value="${bodyForm.date}"></div>
+      <div class="form-grid-3">
+        <div class="inp-group"><div class="inp-label">GEWICHT (KG)</div><input class="inp" type="number" step="0.1" id="body-weight" value="${bodyForm.weight}"></div>
+        <div class="inp-group"><div class="inp-label">KFA (%)</div><input class="inp" type="number" step="0.1" id="body-bf" value="${bodyForm.bodyFat}"></div>
+        <div class="inp-group"><div class="inp-label">TAILLE (CM)</div><input class="inp" type="number" step="0.1" id="body-waist" value="${bodyForm.waist}"></div>
+      </div>
+      <div class="inp-group"><div class="inp-label">NOTIZEN</div><input class="inp" id="body-notes" value="${bodyForm.notes}" placeholder="..."></div>
+      <button class="btn btn-blue btn-full" onclick="saveBodyEntry()">SPEICHERN</button>
+    </div>`:''}
+  </div>
+
+  <!-- HISTORY -->
+  ${log.length===0?'<div class="card" style="text-align:center;padding:20px;color:#444;font-size:11px">Noch keine Messung. Jetzt ersten Eintrag machen!</div>':''}
+  ${log.map((b,i) => {
+    const prev = log[i+1];
+    const delta = prev ? (b.weight - prev.weight) : null;
+    return `
+    <div class="hist-card">
+      <div class="hist-header">
+        <div>
+          <div class="hist-name">${b.weight}kg${b.bodyFat?` · ${b.bodyFat}% KFA`:''}</div>
+          <div class="hist-date">${fmtDate(b.date)}${b.waist?` · ${b.waist}cm Taille`:''}</div>
+        </div>
+        ${delta!==null?`<span class="badge ${delta<0?'badge-green':delta>0?'badge-red':'badge-blue'}">${delta>0?'+':''}${delta.toFixed(1)}kg</span>`:''}
+      </div>
+      ${b.notes?`<div style="font-size:10px;color:#666;margin-top:6px">${b.notes}</div>`:''}
+      <div style="text-align:right;margin-top:4px">
+        <button onclick="deleteBodyEntry(${b.id})" style="background:none;border:none;color:#333;cursor:pointer;font-size:10px">✕ löschen</button>
+      </div>
+    </div>`;
+  }).join('')}
+  `;
+}
+
+function renderBodyChart() {
+  const log = [...state.bodyLog].sort((a,b)=>a.date.localeCompare(b.date));
+  const c = document.getElementById('bodyChart');
+  if (!c || log.length < 2) return;
+  chartInstances.body = new Chart(c, {
+    type:'line',
+    data:{
+      labels: log.map(b=>fmtDate(b.date)),
+      datasets:[
+        { label:'Gewicht (kg)', data:log.map(b=>b.weight), borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,.1)', borderWidth:2, pointRadius:3, pointBackgroundColor:'#3b82f6', fill:true, tension:.3, yAxisID:'y' },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:'#666', font:{family:'Courier New',size:10} } } },
+      scales:{
+        x:{ ticks:{ color:'#444', font:{family:'Courier New',size:9} }, grid:{ color:'#111' } },
+        y:{ ticks:{ color:'#444', font:{family:'Courier New',size:9} }, grid:{ color:'#111' } }
+      }
+    }
+  });
+}
+
+/* ════════════════════════════════════════════
    ACTIONS
 ════════════════════════════════════════════ */
 function switchTab(t) {
@@ -1166,6 +1488,96 @@ function updateSkillStages() {
     const sel = document.getElementById('sk-stage');
     if (sel) { sel.innerHTML = (SKILL_STAGES[skill]||[]).map(s=>`<option>${s}</option>`).join(''); }
   }
+}
+
+function changeNutriDate(delta) {
+  nutriDate = shiftDate(nutriDate, delta);
+  render();
+}
+
+function goToToday() {
+  nutriDate = new Date().toISOString().split('T')[0];
+  render();
+}
+
+function toggleAddFood() {
+  showAddFood = !showAddFood;
+  render();
+}
+
+function toggleAddCustomFood() {
+  showAddCustomFood = !showAddCustomFood;
+  render();
+}
+
+function saveFoodEntry() {
+  const meal = document.getElementById('food-meal')?.value || 'Snack';
+  const foodName = document.getElementById('food-name')?.value;
+  const grams = +document.getElementById('food-grams')?.value || 0;
+  if (!foodName || !grams) return;
+  const food = getAllFoods().find(f => f.name === foodName);
+  if (!food) return;
+  const factor = grams / 100;
+  const entry = {
+    id: Date.now(), date: nutriDate, meal, foodName, grams,
+    kcal: food.kcal*factor, protein: food.protein*factor,
+    carbs: food.carbs*factor, fat: food.fat*factor
+  };
+  state.foodLog.push(entry);
+  foodForm = { foodName, grams:'100', meal };
+  showAddFood = false;
+  saveState();
+  showToast('🍗 Essen gespeichert!');
+  render();
+}
+
+function deleteFoodEntry(id) {
+  state.foodLog = state.foodLog.filter(f => f.id !== id);
+  saveState();
+  render();
+}
+
+function saveCustomFood() {
+  const name = document.getElementById('cf-name')?.value?.trim();
+  const kcal = +document.getElementById('cf-kcal')?.value || 0;
+  const protein = +document.getElementById('cf-protein')?.value || 0;
+  const carbs = +document.getElementById('cf-carbs')?.value || 0;
+  const fat = +document.getElementById('cf-fat')?.value || 0;
+  if (!name) return;
+  state.foods.push({ name, kcal, protein, carbs, fat });
+  foodForm.foodName = name;
+  customFoodForm = { name:'', kcal:'', protein:'', carbs:'', fat:'' };
+  showAddCustomFood = false;
+  saveState();
+  showToast('✅ Lebensmittel angelegt!');
+  render();
+}
+
+function toggleAddBody() {
+  showAddBody = !showAddBody;
+  render();
+}
+
+function saveBodyEntry() {
+  const date = document.getElementById('body-date')?.value || new Date().toISOString().split('T')[0];
+  const weight = +document.getElementById('body-weight')?.value || 0;
+  const bodyFat = document.getElementById('body-bf')?.value ? +document.getElementById('body-bf').value : null;
+  const waist = document.getElementById('body-waist')?.value ? +document.getElementById('body-waist').value : null;
+  const notes = document.getElementById('body-notes')?.value || '';
+  if (!weight) return;
+  state.bodyLog = state.bodyLog.filter(b => b.date !== date);
+  state.bodyLog.push({ id:Date.now(), date, weight, bodyFat, waist, notes });
+  bodyForm = { date, weight:'', bodyFat:'', waist:'', notes:'' };
+  showAddBody = false;
+  saveState();
+  showToast('⚖️ Messung gespeichert!');
+  render();
+}
+
+function deleteBodyEntry(id) {
+  state.bodyLog = state.bodyLog.filter(b => b.id !== id);
+  saveState();
+  render();
 }
 
 /* ════════════════════════════════════════════
